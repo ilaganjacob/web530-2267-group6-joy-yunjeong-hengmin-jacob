@@ -11,7 +11,11 @@ import {
   View,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import {
+  CameraType,
+  CameraView,
+  useCameraPermissions,
+} from "expo-camera";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as Haptics from "expo-haptics";
 
@@ -37,6 +41,7 @@ export function CameraScreen({ navigation }: Props) {
   );
   const [isBusy, setIsBusy] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const [facing, setFacing] = useState<CameraType>("back");
 
   const canShowCamera = permission?.granted && !capturedUri;
   const permissionStatus = permission?.status;
@@ -114,6 +119,10 @@ export function CameraScreen({ navigation }: Props) {
     }
   }
 
+  function handleToggleFacing() {
+    setFacing((current) => (current === "back" ? "front" : "back"));
+  }
+
   function handleOpenSettings() {
     Linking.openSettings().catch(() => {
       Alert.alert(
@@ -188,10 +197,24 @@ export function CameraScreen({ navigation }: Props) {
           <Text style={styles.kicker}>DEADPAN CAMERA SCAN</Text>
           <Text style={styles.title}>Point it at anything.</Text>
         </View>
-        <View style={styles.statusPill}>
-          <Text style={styles.statusText}>
-            {isBusy ? "Analyzing" : capturedUri ? "Frozen" : "Live"}
-          </Text>
+        <View style={styles.headerActions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.flipButton,
+              pressed && styles.flipButtonPressed,
+            ]}
+            onPress={handleToggleFacing}
+            disabled={isBusy || !!capturedUri}
+          >
+            <Text style={styles.flipButtonText}>
+              {facing === "back" ? "Front cam" : "Back cam"}
+            </Text>
+          </Pressable>
+          <View style={styles.statusPill}>
+            <Text style={styles.statusText}>
+              {isBusy ? "Analyzing" : capturedUri ? "Frozen" : "Live"}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -202,7 +225,7 @@ export function CameraScreen({ navigation }: Props) {
           <CameraView
             ref={cameraRef}
             style={styles.previewImage}
-            facing="back"
+            facing={facing}
             onCameraReady={() => setCameraReady(true)}
           />
         )}
@@ -300,6 +323,11 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: -0.8,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   statusPill: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -372,6 +400,23 @@ const styles = StyleSheet.create({
     borderRightWidth: 2,
     borderColor: "rgba(255,255,255,0.84)",
     borderBottomRightRadius: 18,
+  },
+  flipButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+  flipButtonPressed: {
+    opacity: 0.7,
+  },
+  flipButtonText: {
+    color: "#F8FAFC",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.2,
   },
   infoStrip: {
     position: "absolute",
