@@ -1,0 +1,126 @@
+import { useEffect } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from "react-native-svg";
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+type AuraGaugeProps = {
+  value: number;
+  color: string;
+  size?: number;
+};
+
+export function AuraGauge({ value, color, size = 190 }: AuraGaugeProps) {
+  const clampedValue = Math.max(0, Math.min(100, value));
+  const progress = useSharedValue(0);
+  const radius = (size - 18) / 2 - 12;
+  const circumference = 2 * Math.PI * radius;
+
+  useEffect(() => {
+    progress.value = withTiming(clampedValue / 100, {
+      duration: 1100,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [clampedValue, progress]);
+
+  const animatedProps = useAnimatedProps(() => ({
+    strokeDashoffset: circumference * (1 - progress.value),
+  }));
+
+  // We place the indicator on the circle using polar coordinates: angle -> x/y.
+  const angle = -90 + clampedValue * 1.8;
+  const needleRadius = radius + 2;
+  const needleX = size / 2 + Math.cos((angle * Math.PI) / 180) * needleRadius;
+  const needleY = size / 2 + Math.sin((angle * Math.PI) / 180) * needleRadius;
+
+  return (
+    <View style={styles.wrapper}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Defs>
+          <SvgLinearGradient id="auraGaugeGradient" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0%" stopColor={color} stopOpacity={1} />
+            <Stop offset="100%" stopColor="#E8DFFF" stopOpacity={1} />
+          </SvgLinearGradient>
+        </Defs>
+
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={14}
+          fill="none"
+        />
+        <AnimatedCircle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="url(#auraGaugeGradient)"
+          strokeWidth={14}
+          strokeLinecap="round"
+          fill="none"
+          strokeDasharray={circumference}
+          animatedProps={animatedProps}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius - 24}
+          fill="rgba(9, 12, 22, 0.92)"
+        />
+        <Circle cx={needleX} cy={needleY} r={6} fill={color} opacity={0.95} />
+      </Svg>
+
+      <View pointerEvents="none" style={styles.centerCopy}>
+        <Text style={styles.scoreLabel}>VIBE SCORE</Text>
+        <Text style={styles.scoreValue}>{clampedValue}</Text>
+        <Text style={styles.scoreRange}>0-100</Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  centerCopy: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scoreLabel: {
+    color: "rgba(255,255,255,0.58)",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 2,
+  },
+  scoreValue: {
+    color: "#F8FAFC",
+    fontSize: 48,
+    lineHeight: 56,
+    fontWeight: "900",
+    letterSpacing: -1.5,
+    marginTop: 2,
+  },
+  scoreRange: {
+    color: "rgba(255,255,255,0.52)",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+    marginTop: 4,
+  },
+});
