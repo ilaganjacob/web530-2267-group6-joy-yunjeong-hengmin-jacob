@@ -1,20 +1,36 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StatusBar } from "expo-status-bar";
+
+import { CameraScreen } from "./src/screens/CameraScreen";
+import { AuraReportScreen } from "./src/screens/AuraReportScreen";
+import { RootStackParamList } from "./src/navigation/types";
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const navigationTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: "transparent",
+  },
+};
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer theme={navigationTheme}>
+      <StatusBar style="light" />
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: "#05070c",
+          },
+        }}
+      >
+        <Stack.Screen name="Camera" component={CameraScreen} />
+        <Stack.Screen name="AuraReport" component={AuraReportScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
