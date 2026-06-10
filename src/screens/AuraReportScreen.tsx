@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -7,7 +7,11 @@ import {
   Text,
   View,
   useWindowDimensions,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
 } from "react-native";
+import { saveAuraReport, hasSaveEndpoint } from "../services/auraReports";
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Animated, {
@@ -37,10 +41,19 @@ function FadeSlideIn({ delay, children }: FadeSlideInProps) {
   const scale = useSharedValue(0.88);
 
   useEffect(() => {
-    opacity.value = withDelay(delay, withTiming(1, { duration: 900, easing: Easing.out(Easing.quad) }));
+    opacity.value = withDelay(
+      delay,
+      withTiming(1, { duration: 900, easing: Easing.out(Easing.quad) }),
+    );
     // Low stiffness + low damping = travels far, bounces slightly before settling
-    translateY.value = withDelay(delay, withSpring(0, { damping: 13, stiffness: 60, mass: 1.2 }));
-    scale.value = withDelay(delay, withSpring(1, { damping: 13, stiffness: 60, mass: 1.2 }));
+    translateY.value = withDelay(
+      delay,
+      withSpring(0, { damping: 13, stiffness: 60, mass: 1.2 }),
+    );
+    scale.value = withDelay(
+      delay,
+      withSpring(1, { damping: 13, stiffness: 60, mass: 1.2 }),
+    );
   }, [delay]);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -74,12 +87,31 @@ export function AuraReportScreen({ route }: Props) {
   const chartWidth = Math.max(220, Math.min(320, width - 48));
   const auraTint = hexToRgba(report.aura_color, 0.32);
 
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
   // Fire a success haptic the moment the report screen comes into focus
   useFocusEffect(
     useCallback(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }, []),
   );
+
+  const handleSave = async () => {
+    if (saved || saving) return;
+    try {
+      await saveAuraReport(report);
+      setSaved(true);
+    } catch (err) {
+      Alert.alert(
+        "Save Failed",
+        err instanceof Error ? err.message : "Could not save this aura report.",
+        [{ text: "OK" }],
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <LinearGradient
@@ -109,7 +141,10 @@ export function AuraReportScreen({ route }: Props) {
 
             <View style={styles.heroRow}>
               <View style={styles.scoreBlock}>
-                <AuraGauge value={report.vibe_score} color={report.aura_color} />
+                <AuraGauge
+                  value={report.vibe_score}
+                  color={report.aura_color}
+                />
               </View>
               <View style={styles.colorCard}>
                 <Text style={styles.colorLabel}>AURA COLOR</Text>
@@ -131,7 +166,9 @@ export function AuraReportScreen({ route }: Props) {
           <View style={styles.sectionCard}>
             <View style={styles.sectionTitleRow}>
               <Text style={styles.sectionTitle}>TRAIT RADAR</Text>
-              <Text style={styles.sectionNote}>Five-point diagnostic sweep</Text>
+              <Text style={styles.sectionNote}>
+                Five-point diagnostic sweep
+              </Text>
             </View>
             <TraitRadar
               traits={report.traits}
@@ -154,6 +191,25 @@ export function AuraReportScreen({ route }: Props) {
             <Text style={styles.bodyText}>{report.recommendation}</Text>
           </View>
         </FadeSlideIn>
+
+        {hasSaveEndpoint() && (
+          <FadeSlideIn delay={600}>
+            <TouchableOpacity
+              style={[saveStyles.button, saved && saveStyles.buttonSaved]}
+              onPress={handleSave}
+              disabled={saving || saved}
+              activeOpacity={0.8}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={saveStyles.label}>
+                  {saved ? "✓ Aura Saved" : "Save Aura"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </FadeSlideIn>
+        )}
       </ScrollView>
     </LinearGradient>
   );
@@ -308,5 +364,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     fontWeight: "600",
+  },
+});
+
+const saveStyles = StyleSheet.create({
+  button: {
+    alignSelf: "center",
+    marginTop: 24,
+    marginBottom: 40,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    borderRadius: 32,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.45)",
+  },
+  buttonSaved: {
+    backgroundColor: "rgba(100,220,140,0.25)",
+    borderColor: "rgba(100,220,140,0.7)",
+  },
+  label: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
 });
