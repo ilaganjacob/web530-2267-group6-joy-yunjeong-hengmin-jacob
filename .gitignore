@@ -47,3 +47,4 @@ supabase/.temp/
 # Editor and tooling config
 .claude/
 *.xlsx
+/design
