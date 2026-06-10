@@ -43,3 +43,6 @@ yarn-error.*
 
 # Supabase CLI local cache
 supabase/.temp/
+
+# Editor and tooling config
+.claude/
