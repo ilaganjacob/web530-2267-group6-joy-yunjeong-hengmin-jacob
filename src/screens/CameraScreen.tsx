@@ -162,6 +162,12 @@ export function CameraScreen({ navigation }: Props) {
           >
             <Text style={styles.primaryButtonText}>Allow camera</Text>
           </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate("History")}
+          >
+            <Text style={styles.secondaryButtonText}>View history</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -185,6 +191,12 @@ export function CameraScreen({ navigation }: Props) {
           >
             <Text style={styles.secondaryButtonText}>Try again</Text>
           </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate("History")}
+          >
+            <Text style={styles.secondaryButtonText}>View history</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -198,6 +210,16 @@ export function CameraScreen({ navigation }: Props) {
           <Text style={styles.title}>Point it at anything.</Text>
         </View>
         <View style={styles.headerActions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.flipButton,
+              pressed && styles.flipButtonPressed,
+            ]}
+            onPress={() => navigation.navigate("History")}
+            disabled={isBusy}
+          >
+            <Text style={styles.flipButtonText}>History</Text>
+          </Pressable>
           <Pressable
             style={({ pressed }) => [
               styles.flipButton,
@@ -249,7 +271,7 @@ export function CameraScreen({ navigation }: Props) {
             {isBusy
               ? analysisMode
               : processedPhoto
-                ? `${processedPhoto.width}×${processedPhoto.height}`
+                ? `${processedPhoto.width} x ${processedPhoto.height}`
                 : "JPEG output pending"}
           </Text>
         </View>
@@ -286,6 +308,17 @@ export function CameraScreen({ navigation }: Props) {
           )}
         </Pressable>
 
+        <Pressable
+          style={({ pressed }) => [
+            styles.historyButton,
+            pressed && styles.historyButtonPressed,
+          ]}
+          onPress={() => navigation.navigate("History")}
+          disabled={isBusy}
+        >
+          <Text style={styles.historyButtonText}>View history</Text>
+        </Pressable>
+
         <Text style={styles.caption}>
           Capture freezes the frame and prepares a resized JPEG for the analysis
           step.
@@ -304,9 +337,7 @@ const styles = StyleSheet.create({
     paddingBottom: 18,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
+    gap: 12,
     marginBottom: 14,
   },
   kicker: {
@@ -326,6 +357,7 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: 8,
   },
   statusPill: {
@@ -491,6 +523,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+  },
+  historyButton: {
+    height: 50,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+  historyButtonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
+  },
+  historyButtonText: {
+    color: "#E9D5FF",
+    fontSize: 14,
+    fontWeight: "900",
+    letterSpacing: 1.2,
   },
   caption: {
     color: "#94A3B8",

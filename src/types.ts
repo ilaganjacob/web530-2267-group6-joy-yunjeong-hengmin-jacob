@@ -14,3 +14,9 @@ export type AuraReport = {
   verdict: string;
   recommendation: string;
 };
+
+export type SavedAuraReport = AuraReport & {
+  id: string;
+  created_at: string;
+  is_favorite: boolean;
+};
