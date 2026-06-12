@@ -24,8 +24,16 @@ type AuraGaugeProps = {
 export function AuraGauge({ value, color, size = 190 }: AuraGaugeProps) {
   const clampedValue = Math.max(0, Math.min(100, value));
   const progress = useSharedValue(0);
-  const radius = (size - 18) / 2 - 12;
+  const strokeWidth = size < 140 ? 10 : 14;
+  const radius = (size - strokeWidth) / 2 - 12;
   const circumference = 2 * Math.PI * radius;
+  const innerRadius = Math.max(18, radius - (size < 140 ? 16 : 24));
+  const needleDotRadius = size < 140 ? 4 : 6;
+  const gradientId = `auraGaugeGradient${size}${color.replace("#", "")}`;
+  const labelFontSize = size < 140 ? 7 : 10;
+  const valueFontSize = size < 140 ? 30 : 48;
+  const valueLineHeight = size < 140 ? 34 : 56;
+  const rangeFontSize = size < 140 ? 8 : 11;
 
   useEffect(() => {
     progress.value = withTiming(clampedValue / 100, {
@@ -48,7 +56,7 @@ export function AuraGauge({ value, color, size = 190 }: AuraGaugeProps) {
     <View style={styles.wrapper}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <Defs>
-          <SvgLinearGradient id="auraGaugeGradient" x1="0" y1="0" x2="1" y2="1">
+          <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
             <Stop offset="0%" stopColor={color} stopOpacity={1} />
             <Stop offset="100%" stopColor="#E8DFFF" stopOpacity={1} />
           </SvgLinearGradient>
@@ -59,15 +67,15 @@ export function AuraGauge({ value, color, size = 190 }: AuraGaugeProps) {
           cy={size / 2}
           r={radius}
           stroke="rgba(255,255,255,0.08)"
-          strokeWidth={14}
+          strokeWidth={strokeWidth}
           fill="none"
         />
         <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="url(#auraGaugeGradient)"
-          strokeWidth={14}
+          stroke={`url(#${gradientId})`}
+          strokeWidth={strokeWidth}
           strokeLinecap="round"
           fill="none"
           strokeDasharray={circumference}
@@ -77,16 +85,33 @@ export function AuraGauge({ value, color, size = 190 }: AuraGaugeProps) {
         <Circle
           cx={size / 2}
           cy={size / 2}
-          r={radius - 24}
+          r={innerRadius}
           fill="rgba(9, 12, 22, 0.92)"
         />
-        <Circle cx={needleX} cy={needleY} r={6} fill={color} opacity={0.95} />
+        <Circle
+          cx={needleX}
+          cy={needleY}
+          r={needleDotRadius}
+          fill={color}
+          opacity={0.95}
+        />
       </Svg>
 
       <View pointerEvents="none" style={styles.centerCopy}>
-        <Text style={styles.scoreLabel}>VIBE SCORE</Text>
-        <Text style={styles.scoreValue}>{clampedValue}</Text>
-        <Text style={styles.scoreRange}>0-100</Text>
+        <Text style={[styles.scoreLabel, { fontSize: labelFontSize }]}>
+          VIBE SCORE
+        </Text>
+        <Text
+          style={[
+            styles.scoreValue,
+            { fontSize: valueFontSize, lineHeight: valueLineHeight },
+          ]}
+        >
+          {clampedValue}
+        </Text>
+        <Text style={[styles.scoreRange, { fontSize: rangeFontSize }]}>
+          0-100
+        </Text>
       </View>
     </View>
   );

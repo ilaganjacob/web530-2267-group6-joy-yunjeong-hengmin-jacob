@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 
 import { CameraScreen } from "./src/screens/CameraScreen";
 import { AuraReportScreen } from "./src/screens/AuraReportScreen";
+import { HistoryScreen } from "./src/screens/HistoryScreen";
 import { RootStackParamList } from "./src/navigation/types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -29,6 +30,7 @@ export default function App() {
         }}
       >
         <Stack.Screen name="Camera" component={CameraScreen} />
+        <Stack.Screen name="History" component={HistoryScreen} />
         <Stack.Screen name="AuraReport" component={AuraReportScreen} />
       </Stack.Navigator>
     </NavigationContainer>

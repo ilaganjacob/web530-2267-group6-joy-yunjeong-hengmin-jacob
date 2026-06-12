@@ -71,6 +71,7 @@ function hexToRgba(hexColor: string, alpha: number) {
 export function AuraReportScreen({ route }: Props) {
   const { width } = useWindowDimensions();
   const report = route.params?.report ?? SAMPLE_AURA_REPORT;
+  const mode = route.params?.mode ?? "scan";
   const chartWidth = Math.max(220, Math.min(320, width - 48));
   const auraTint = hexToRgba(report.aura_color, 0.32);
 
@@ -99,7 +100,9 @@ export function AuraReportScreen({ route }: Props) {
           <View style={styles.heroCard}>
             <View style={styles.heroHeader}>
               <View style={styles.kickerPill}>
-                <Text style={styles.kickerText}>AURA SCAN</Text>
+                <Text style={styles.kickerText}>
+                  {mode === "saved" ? "SAVED AURA" : "AURA SCAN"}
+                </Text>
               </View>
               <ThreatBadge level={report.threat_level} />
             </View>
