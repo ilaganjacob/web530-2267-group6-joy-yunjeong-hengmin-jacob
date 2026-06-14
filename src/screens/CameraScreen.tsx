@@ -18,6 +18,7 @@ import {
 } from "expo-camera";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as Haptics from "expo-haptics";
+import { Ionicons } from "@expo/vector-icons";
 
 import { ScanningOverlay } from "../components/ScanningOverlay";
 import { RootStackParamList } from "../navigation/types";
@@ -197,24 +198,10 @@ export function CameraScreen({ navigation }: Props) {
           <Text style={styles.kicker}>DEADPAN CAMERA SCAN</Text>
           <Text style={styles.title}>Point it at anything.</Text>
         </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.flipButton,
-              pressed && styles.flipButtonPressed,
-            ]}
-            onPress={handleToggleFacing}
-            disabled={isBusy || !!capturedUri}
-          >
-            <Text style={styles.flipButtonText}>
-              {facing === "back" ? "Front cam" : "Back cam"}
-            </Text>
-          </Pressable>
-          <View style={styles.statusPill}>
-            <Text style={styles.statusText}>
-              {isBusy ? "Analyzing" : capturedUri ? "Frozen" : "Live"}
-            </Text>
-          </View>
+        <View style={styles.statusPill}>
+          <Text style={styles.statusText}>
+            {isBusy ? "Analyzing" : capturedUri ? "Frozen" : "Live"}
+          </Text>
         </View>
       </View>
 
@@ -236,6 +223,24 @@ export function CameraScreen({ navigation }: Props) {
           <View style={styles.cornerBottomLeft} />
           <View style={styles.cornerBottomRight} />
         </View>
+
+        {!capturedUri ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.flipButton,
+              pressed && styles.flipButtonPressed,
+              isBusy && styles.flipButtonDisabled,
+            ]}
+            onPress={handleToggleFacing}
+            disabled={isBusy}
+            accessibilityRole="button"
+            accessibilityLabel={
+              facing === "back" ? "Switch to front camera" : "Switch to back camera"
+            }
+          >
+            <Ionicons name="camera-reverse-outline" size={22} color="#F8FAFC" />
+          </Pressable>
+        ) : null}
 
         <View style={styles.infoStrip}>
           <Text style={styles.infoText}>
@@ -323,11 +328,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: -0.8,
   },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   statusPill: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -402,21 +402,24 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 18,
   },
   flipButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    position: "absolute",
+    top: 22,
+    right: 22,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(7, 10, 18, 0.74)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
+    borderColor: "rgba(255,255,255,0.12)",
+    zIndex: 2,
   },
   flipButtonPressed: {
     opacity: 0.7,
   },
-  flipButtonText: {
-    color: "#F8FAFC",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1.2,
+  flipButtonDisabled: {
+    opacity: 0.45,
   },
   infoStrip: {
     position: "absolute",
