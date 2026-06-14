@@ -14,3 +14,8 @@ export type AuraReport = {
   verdict: string;
   recommendation: string;
 };
+
+export type DailyAuraRecord = AuraReport & {
+  is_daily: true;
+  date: string;
+};

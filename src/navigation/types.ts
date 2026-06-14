@@ -1,10 +1,15 @@
 import { AuraReport } from "../types";
 
 export type RootStackParamList = {
-  Camera: undefined;
+  Camera:
+    | {
+        dailyMode?: boolean;
+      }
+    | undefined;
   AuraReport:
     | {
         report: AuraReport;
       }
     | undefined;
+  DailyAura: undefined;
 };
