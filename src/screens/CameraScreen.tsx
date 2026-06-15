@@ -33,6 +33,13 @@ type ProcessedPhoto = {
   height: number;
 };
 
+// Lets the scanning overlay play one full sweep before the capture resolves.
+const MIN_SCAN_OVERLAY_MS = 2000;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function CameraScreen({ navigation }: Props) {
   const { signOut } = useAuth();
   const cameraRef = useRef<CameraView | null>(null);
@@ -57,6 +64,7 @@ export function CameraScreen({ navigation }: Props) {
     }
 
     setIsBusy(true);
+    const startedAt = Date.now();
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -92,6 +100,11 @@ export function CameraScreen({ navigation }: Props) {
         width: resizedPhoto.width,
         height: resizedPhoto.height,
       });
+
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < MIN_SCAN_OVERLAY_MS) {
+        await wait(MIN_SCAN_OVERLAY_MS - elapsed);
+      }
     } catch (error) {
       console.error("Camera capture failed:", error);
       Alert.alert(
