@@ -51,7 +51,7 @@ export function CameraScreen({ navigation }: Props) {
     ? "Live analysis"
     : "Fallback mode";
 
-  async function handleScan() {
+  async function handleCapture() {
     if (!cameraRef.current || isBusy) {
       return;
     }
@@ -92,18 +92,45 @@ export function CameraScreen({ navigation }: Props) {
         width: resizedPhoto.width,
         height: resizedPhoto.height,
       });
-
-      const report = await analyzeAura(resizedPhoto.base64);
-
-      navigation.navigate("AuraReport", { report });
     } catch (error) {
-      console.error("Camera scan failed:", error);
+      console.error("Camera capture failed:", error);
       Alert.alert(
-        "Scan paused",
+        "Capture paused",
         "Aura could not capture or prepare this image. Try again and the camera will stay stable.",
       );
       setCapturedUri(null);
       setProcessedPhoto(null);
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  function handleRetake() {
+    if (isBusy) {
+      return;
+    }
+
+    setCapturedUri(null);
+    setProcessedPhoto(null);
+    setCameraReady(false);
+  }
+
+  async function handleAnalyze() {
+    if (!processedPhoto || isBusy) {
+      return;
+    }
+
+    setIsBusy(true);
+
+    try {
+      const report = await analyzeAura(processedPhoto.base64);
+      navigation.navigate("AuraReport", { report });
+    } catch (error) {
+      console.error("Aura analysis failed:", error);
+      Alert.alert(
+        "Analysis paused",
+        "Aura could not read this photo. Try analyzing again or retake the photo.",
+      );
     } finally {
       setIsBusy(false);
     }
@@ -308,24 +335,50 @@ export function CameraScreen({ navigation }: Props) {
           </Text>
         </View>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.scanButton,
-            pressed && styles.scanButtonPressed,
-            isBusy && styles.scanButtonDisabled,
-          ]}
-          onPress={handleScan}
-          disabled={isBusy || !cameraReady}
-        >
-          {isBusy ? (
-            <View style={styles.scanButtonLoadingRow}>
-              <ActivityIndicator color="#05070C" />
-              <Text style={styles.scanButtonText}>Analyzing</Text>
-            </View>
-          ) : (
-            <Text style={styles.scanButtonText}>Scan</Text>
-          )}
-        </Pressable>
+        {capturedUri && !isBusy ? (
+          <View style={styles.actionRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.retakeButton,
+                pressed && styles.retakeButtonPressed,
+              ]}
+              onPress={handleRetake}
+            >
+              <Text style={styles.retakeButtonText}>Retake</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.scanButton,
+                styles.analyzeButton,
+                pressed && styles.scanButtonPressed,
+              ]}
+              onPress={handleAnalyze}
+            >
+              <Text style={styles.scanButtonText}>Analyze aura</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            style={({ pressed }) => [
+              styles.scanButton,
+              pressed && styles.scanButtonPressed,
+              isBusy && styles.scanButtonDisabled,
+            ]}
+            onPress={handleCapture}
+            disabled={isBusy || !cameraReady || !!capturedUri}
+          >
+            {isBusy ? (
+              <View style={styles.scanButtonLoadingRow}>
+                <ActivityIndicator color="#05070C" />
+                <Text style={styles.scanButtonText}>
+                  {capturedUri ? "Analyzing" : "Capturing"}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.scanButtonText}>Scan</Text>
+            )}
+          </Pressable>
+        )}
 
         <Pressable
           style={({ pressed }) => [
@@ -542,6 +595,33 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  analyzeButton: {
+    flex: 1,
+  },
+  retakeButton: {
+    flex: 1,
+    height: 58,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+  retakeButtonPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.98 }],
+  },
+  retakeButtonText: {
+    color: "#E2E8F0",
+    fontSize: 16,
+    fontWeight: "900",
+    letterSpacing: 1.2,
   },
   historyButton: {
     height: 50,
