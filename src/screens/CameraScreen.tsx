@@ -113,10 +113,12 @@ export function CameraScreen({ navigation }: Props) {
   const [processedPhoto, setProcessedPhoto] = useState<ProcessedPhoto | null>(
     null,
   );
-  const [isBusy, setIsBusy] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [facing, setFacing] = useState<CameraType>("back");
 
+  const isBusy = isCapturing || isAnalyzing;
   const canShowCamera = permission?.granted && !capturedUri;
   const permissionStatus = permission?.status;
   const analysisMode = hasAuraAnalysisEndpoint()
@@ -128,7 +130,7 @@ export function CameraScreen({ navigation }: Props) {
       return;
     }
 
-    setIsBusy(true);
+    setIsCapturing(true);
     const startedAt = Date.now();
 
     try {
@@ -179,7 +181,7 @@ export function CameraScreen({ navigation }: Props) {
       setCapturedUri(null);
       setProcessedPhoto(null);
     } finally {
-      setIsBusy(false);
+      setIsCapturing(false);
     }
   }
 
@@ -198,7 +200,7 @@ export function CameraScreen({ navigation }: Props) {
       return;
     }
 
-    setIsBusy(true);
+    setIsAnalyzing(true);
 
     try {
       const report = await analyzeAura(processedPhoto.base64);
@@ -210,7 +212,7 @@ export function CameraScreen({ navigation }: Props) {
         "Aura could not read this photo. Try analyzing again or retake the photo.",
       );
     } finally {
-      setIsBusy(false);
+      setIsAnalyzing(false);
     }
   }
 
@@ -358,7 +360,13 @@ export function CameraScreen({ navigation }: Props) {
           </Pressable>
           <View style={styles.statusPill}>
             <Text style={styles.statusText}>
-              {isBusy ? "Analyzing" : capturedUri ? "Frozen" : "Live"}
+              {isCapturing
+                ? "Capturing"
+                : isAnalyzing
+                  ? "Analyzing"
+                  : capturedUri
+                    ? "Frozen"
+                    : "Live"}
             </Text>
           </View>
         </View>
@@ -392,7 +400,7 @@ export function CameraScreen({ navigation }: Props) {
                 : "Warming up camera"}
           </Text>
           <Text style={styles.infoTextMuted}>
-            {isBusy
+            {isAnalyzing
               ? analysisMode
               : processedPhoto
                 ? `${processedPhoto.width} x ${processedPhoto.height}`
@@ -400,7 +408,7 @@ export function CameraScreen({ navigation }: Props) {
           </Text>
         </View>
 
-        {isBusy ? <ScanningOverlay /> : null}
+        {isCapturing ? <ScanningOverlay /> : null}
       </View>
 
       <View style={styles.footer}>
@@ -431,7 +439,7 @@ export function CameraScreen({ navigation }: Props) {
               <View style={styles.scanButtonLoadingRow}>
                 <ActivityIndicator color="#05070C" />
                 <Text style={styles.scanButtonText}>
-                  {capturedUri ? "Analyzing" : "Capturing"}
+                  {isAnalyzing ? "Analyzing" : "Capturing"}
                 </Text>
               </View>
             ) : (
