@@ -152,7 +152,7 @@ export function HistoryScreen({ navigation }: Props) {
                 item.is_favorite && styles.favoriteTextActive,
               ]}
             >
-              {item.is_favorite ? "FAV" : "ADD"}
+              {item.is_favorite ? "★" : "☆"}
             </Text>
           </Pressable>
         </View>
@@ -495,10 +495,8 @@ const styles = StyleSheet.create({
   },
   favoriteText: {
     color: "#CBD5E1",
-    fontSize: 10,
-    lineHeight: 12,
-    fontWeight: "900",
-    letterSpacing: 0.6,
+    fontSize: 20,
+    lineHeight: 22,
   },
   favoriteTextActive: {
     color: "#FACC15",

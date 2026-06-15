@@ -205,6 +205,9 @@ export function CameraScreen({ navigation }: Props) {
     try {
       const report = await analyzeAura(processedPhoto.base64);
       navigation.navigate("AuraReport", { report });
+      setCapturedUri(null);
+      setProcessedPhoto(null);
+      setCameraReady(false);
     } catch (error) {
       console.error("Aura analysis failed:", error);
       Alert.alert(
