@@ -1,11 +1,6 @@
 import { FALLBACK_REPORTS } from "../data/fallbackAuraReports";
+import { isSupabaseConfigured, supabase } from "./supabaseClient";
 import { AuraReport, SavedAuraReport } from "../types";
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
-const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
-const REPORTS_TABLE_URL = SUPABASE_URL
-  ? `${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/aura_reports`
-  : "";
 
 let fallbackReports = FALLBACK_REPORTS.map((report, index) =>
   toSavedReport(report, index),
@@ -20,19 +15,6 @@ function toSavedReport(report: AuraReport, index: number): SavedAuraReport {
     created_at: createdAt,
     is_favorite: index === 0,
   };
-}
-
-function getHeaders() {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  if (ANON_KEY) {
-    headers.Authorization = `Bearer ${ANON_KEY}`;
-    headers.apikey = ANON_KEY;
-  }
-
-  return headers;
 }
 
 function isSavedAuraReport(value: unknown): value is SavedAuraReport {
@@ -65,21 +47,21 @@ function normalizeReports(payload: unknown): SavedAuraReport[] {
 }
 
 export async function getReports(): Promise<SavedAuraReport[]> {
-  if (!REPORTS_TABLE_URL || !ANON_KEY) {
+  if (!isSupabaseConfigured) {
     return fallbackReports;
   }
 
   try {
-    const response = await fetch(
-      `${REPORTS_TABLE_URL}?select=*&order=created_at.desc`,
-      { headers: getHeaders() },
-    );
+    const { data, error } = await supabase
+      .from("aura_reports")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    if (!response.ok) {
-      throw new Error(`Saved reports failed with status ${response.status}.`);
+    if (error) {
+      throw error;
     }
 
-    return normalizeReports(await response.json());
+    return normalizeReports(data);
   } catch (error) {
     console.warn("Saved reports fallback engaged:", error);
     return fallbackReports;
@@ -87,45 +69,40 @@ export async function getReports(): Promise<SavedAuraReport[]> {
 }
 
 export function hasSaveEndpoint(): boolean {
-  return Boolean(REPORTS_TABLE_URL && ANON_KEY);
+  return isSupabaseConfigured;
 }
 
 export async function saveAuraReport(
   report: AuraReport,
 ): Promise<SavedAuraReport> {
-  if (!REPORTS_TABLE_URL || !ANON_KEY) {
+  if (!isSupabaseConfigured) {
     throw new Error(
       "Supabase is not configured. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.",
     );
   }
 
-  const response = await fetch(REPORTS_TABLE_URL, {
-    method: "POST",
-    headers: {
-      ...getHeaders(),
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify(report),
-  });
+  const { data, error } = await supabase
+    .from("aura_reports")
+    .insert(report)
+    .select()
+    .single();
 
-  if (!response.ok) {
-    throw new Error(`Failed to save aura report: ${response.status}.`);
+  if (error) {
+    throw new Error(`Failed to save aura report: ${error.message}`);
   }
 
-  const [saved] = normalizeReports(await response.json());
-
-  if (!saved) {
+  if (!isSavedAuraReport(data)) {
     throw new Error("Save succeeded but no report was returned.");
   }
 
-  return saved;
+  return data;
 }
 
 export async function toggleFavorite(
   reportId: string,
   nextValue: boolean,
 ): Promise<SavedAuraReport | null> {
-  if (!REPORTS_TABLE_URL || !ANON_KEY || reportId.startsWith("fallback-")) {
+  if (!isSupabaseConfigured || reportId.startsWith("fallback-")) {
     fallbackReports = fallbackReports.map((report) =>
       report.id === reportId ? { ...report, is_favorite: nextValue } : report,
     );
@@ -133,19 +110,16 @@ export async function toggleFavorite(
     return fallbackReports.find((report) => report.id === reportId) ?? null;
   }
 
-  const response = await fetch(`${REPORTS_TABLE_URL}?id=eq.${reportId}`, {
-    method: "PATCH",
-    headers: {
-      ...getHeaders(),
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify({ is_favorite: nextValue }),
-  });
+  const { data, error } = await supabase
+    .from("aura_reports")
+    .update({ is_favorite: nextValue })
+    .eq("id", reportId)
+    .select()
+    .single();
 
-  if (!response.ok) {
-    throw new Error(`Favorite update failed with status ${response.status}.`);
+  if (error) {
+    throw new Error(`Favorite update failed: ${error.message}`);
   }
 
-  const [updatedReport] = normalizeReports(await response.json());
-  return updatedReport ?? null;
+  return isSavedAuraReport(data) ? data : null;
 }
