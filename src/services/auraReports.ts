@@ -32,7 +32,7 @@ interface AuraReportRow {
 
 export async function saveAuraReport(
   report: AuraReport,
-): Promise<AuraReportRow & { id: string; create_at: string }> {
+): Promise<AuraReportRow & { id: string; created_at: string }> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error(
       "Supabase is not configured. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.",
@@ -62,10 +62,11 @@ export async function saveAuraReport(
   });
 
   if (!response.ok) {
-    let detail = response.json();
+    let detail = response.statusText;
+
     try {
       const err = await response.json();
-      detail = err?.message ?? err?.error ?? detail;
+      detail = err?.message ?? err?.error ?? JSON.stringify(err);
     } catch {
       // ignore
     }

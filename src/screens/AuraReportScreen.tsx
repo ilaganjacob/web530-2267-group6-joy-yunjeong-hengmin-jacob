@@ -99,6 +99,9 @@ export function AuraReportScreen({ route }: Props) {
 
   const handleSave = async () => {
     if (saved || saving) return;
+
+    setSaving(true);
+
     try {
       await saveAuraReport(report);
       setSaved(true);
