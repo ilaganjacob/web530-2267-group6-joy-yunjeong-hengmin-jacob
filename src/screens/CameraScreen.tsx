@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,7 +17,15 @@ import {
   useCameraPermissions,
 } from "expo-camera";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 
 import { ScanningOverlay } from "../components/ScanningOverlay";
 import { useAuth } from "../context/AuthContext";
@@ -33,11 +41,68 @@ type ProcessedPhoto = {
   height: number;
 };
 
-// Lets the scanning overlay play one full sweep before the capture resolves.
-const MIN_SCAN_OVERLAY_MS = 2000;
+// Lets the scanning overlay play a full sweep before the capture resolves.
+const MIN_SCAN_OVERLAY_MS = 4000;
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function AnalyzeAuraButton({ onPress }: { onPress: () => void }) {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.sin) }),
+      -1,
+      true,
+    );
+  }, [pulse]);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: 0.35 + pulse.value * 0.4,
+    transform: [{ scale: 1 + pulse.value * 0.05 }],
+  }));
+
+  const sparkleAStyle = useAnimatedStyle(() => ({
+    opacity: 0.3 + pulse.value * 0.7,
+    transform: [{ scale: 0.7 + pulse.value * 0.5 }],
+  }));
+
+  const sparkleBStyle = useAnimatedStyle(() => ({
+    opacity: 1 - pulse.value * 0.7,
+    transform: [{ scale: 1.2 - pulse.value * 0.5 }],
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.analyzeButtonWrap,
+        pressed && styles.scanButtonPressed,
+      ]}
+    >
+      <Animated.View style={[styles.analyzeGlow, glowStyle]} />
+      <LinearGradient
+        colors={["#FBF5FF", "#E9D5FF", "#C4B5FD"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.analyzeGradient}
+      >
+        <Animated.Text
+          style={[styles.sparkle, styles.sparkleTopLeft, sparkleAStyle]}
+        >
+          ✦
+        </Animated.Text>
+        <Text style={styles.analyzeButtonText}>Analyze aura</Text>
+        <Animated.Text
+          style={[styles.sparkle, styles.sparkleBottomRight, sparkleBStyle]}
+        >
+          ✦
+        </Animated.Text>
+      </LinearGradient>
+    </Pressable>
+  );
 }
 
 export function CameraScreen({ navigation }: Props) {
@@ -339,15 +404,6 @@ export function CameraScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.base64Card}>
-          <Text style={styles.base64Label}>BASE64 PREP</Text>
-          <Text style={styles.base64Value} numberOfLines={1}>
-            {processedPhoto
-              ? `${processedPhoto.base64.length} chars`
-              : "Not generated yet"}
-          </Text>
-        </View>
-
         {capturedUri && !isBusy ? (
           <View style={styles.actionRow}>
             <Pressable
@@ -359,16 +415,7 @@ export function CameraScreen({ navigation }: Props) {
             >
               <Text style={styles.retakeButtonText}>Retake</Text>
             </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.scanButton,
-                styles.analyzeButton,
-                pressed && styles.scanButtonPressed,
-              ]}
-              onPress={handleAnalyze}
-            >
-              <Text style={styles.scanButtonText}>Analyze aura</Text>
-            </Pressable>
+            <AnalyzeAuraButton onPress={handleAnalyze} />
           </View>
         ) : (
           <Pressable
@@ -564,26 +611,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     gap: 12,
   },
-  base64Card: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    gap: 4,
-  },
-  base64Label: {
-    color: "rgba(255,255,255,0.55)",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.2,
-  },
-  base64Value: {
-    color: "#F8FAFC",
-    fontSize: 14,
-    fontWeight: "800",
-  },
   scanButton: {
     height: 58,
     borderRadius: 18,
@@ -611,10 +638,8 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 12,
-  },
-  analyzeButton: {
-    flex: 1,
   },
   retakeButton: {
     flex: 1,
@@ -635,6 +660,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     letterSpacing: 1.2,
+  },
+  analyzeButtonWrap: {
+    flex: 1.7,
+    height: 72,
+    borderRadius: 22,
+  },
+  analyzeGlow: {
+    ...StyleSheet.absoluteFillObject,
+    margin: -8,
+    borderRadius: 28,
+    backgroundColor: "#C4B5FD",
+    shadowColor: "#C4B5FD",
+    shadowOpacity: 0.9,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 12,
+  },
+  analyzeGradient: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  analyzeButtonText: {
+    color: "#05070C",
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 1.4,
+  },
+  sparkle: {
+    position: "absolute",
+    color: "#FFFFFF",
+    fontSize: 14,
+  },
+  sparkleTopLeft: {
+    top: 10,
+    left: 16,
+  },
+  sparkleBottomRight: {
+    bottom: 10,
+    right: 16,
   },
   historyButton: {
     height: 50,
