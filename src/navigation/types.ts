@@ -1,6 +1,7 @@
 import { AuraReport } from "../types";
 
 export type RootStackParamList = {
+  Auth: undefined;
   Camera: undefined;
   History: undefined;
   AuraReport:
