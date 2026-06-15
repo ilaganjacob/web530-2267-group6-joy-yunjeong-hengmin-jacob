@@ -1,10 +1,13 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -24,6 +27,7 @@ import { ThreatBadge } from "../components/ThreatBadge";
 import { TraitRadar } from "../components/TraitRadar";
 import { SAMPLE_AURA_REPORT } from "../data/sampleAuraReport";
 import { RootStackParamList } from "../navigation/types";
+import { hasSaveEndpoint, saveAuraReport } from "../services/auraReports";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AuraReport">;
 
@@ -74,6 +78,10 @@ export function AuraReportScreen({ route }: Props) {
   const mode = route.params?.mode ?? "scan";
   const chartWidth = Math.max(220, Math.min(320, width - 48));
   const auraTint = hexToRgba(report.aura_color, 0.32);
+  const canSave = mode === "scan" && hasSaveEndpoint();
+
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   // Fire a success haptic the moment the report screen comes into focus
   useFocusEffect(
@@ -81,6 +89,27 @@ export function AuraReportScreen({ route }: Props) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }, []),
   );
+
+  async function handleSave() {
+    if (saving || saved) {
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await saveAuraReport(report);
+      setSaved(true);
+    } catch (error) {
+      console.error("Save aura report failed:", error);
+      Alert.alert(
+        "Save failed",
+        "This aura report could not be saved. Try again in a moment.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <LinearGradient
@@ -157,6 +186,30 @@ export function AuraReportScreen({ route }: Props) {
             <Text style={styles.bodyText}>{report.recommendation}</Text>
           </View>
         </FadeSlideIn>
+
+        {canSave ? (
+          <FadeSlideIn delay={1100}>
+            <TouchableOpacity
+              style={[styles.saveButton, saved && styles.saveButtonSaved]}
+              onPress={handleSave}
+              disabled={saving || saved}
+              activeOpacity={0.85}
+            >
+              {saving ? (
+                <ActivityIndicator color="#05070C" />
+              ) : (
+                <Text
+                  style={[
+                    styles.saveButtonText,
+                    saved && styles.saveButtonTextSaved,
+                  ]}
+                >
+                  {saved ? "Saved to history" : "Save aura"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </FadeSlideIn>
+        ) : null}
       </ScrollView>
     </LinearGradient>
   );
@@ -311,5 +364,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     fontWeight: "600",
+  },
+  saveButton: {
+    height: 58,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#E9D5FF",
+  },
+  saveButtonSaved: {
+    backgroundColor: "rgba(255,255,255,0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  saveButtonText: {
+    color: "#05070C",
+    fontSize: 16,
+    fontWeight: "900",
+    letterSpacing: 1.4,
+  },
+  saveButtonTextSaved: {
+    color: "#E9D5FF",
   },
 });

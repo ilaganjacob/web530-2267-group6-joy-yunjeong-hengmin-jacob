@@ -86,6 +86,41 @@ export async function getReports(): Promise<SavedAuraReport[]> {
   }
 }
 
+export function hasSaveEndpoint(): boolean {
+  return Boolean(REPORTS_TABLE_URL && ANON_KEY);
+}
+
+export async function saveAuraReport(
+  report: AuraReport,
+): Promise<SavedAuraReport> {
+  if (!REPORTS_TABLE_URL || !ANON_KEY) {
+    throw new Error(
+      "Supabase is not configured. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.",
+    );
+  }
+
+  const response = await fetch(REPORTS_TABLE_URL, {
+    method: "POST",
+    headers: {
+      ...getHeaders(),
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(report),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to save aura report: ${response.status}.`);
+  }
+
+  const [saved] = normalizeReports(await response.json());
+
+  if (!saved) {
+    throw new Error("Save succeeded but no report was returned.");
+  }
+
+  return saved;
+}
+
 export async function toggleFavorite(
   reportId: string,
   nextValue: boolean,
