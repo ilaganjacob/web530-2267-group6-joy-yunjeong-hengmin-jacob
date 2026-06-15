@@ -20,6 +20,7 @@ import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import * as Haptics from "expo-haptics";
 
 import { ScanningOverlay } from "../components/ScanningOverlay";
+import { useAuth } from "../context/AuthContext";
 import { RootStackParamList } from "../navigation/types";
 import { analyzeAura, hasAuraAnalysisEndpoint } from "../services/analyzeAura";
 
@@ -33,6 +34,7 @@ type ProcessedPhoto = {
 };
 
 export function CameraScreen({ navigation }: Props) {
+  const { signOut } = useAuth();
   const cameraRef = useRef<CameraView | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
@@ -121,6 +123,13 @@ export function CameraScreen({ navigation }: Props) {
 
   function handleToggleFacing() {
     setFacing((current) => (current === "back" ? "front" : "back"));
+  }
+
+  function handleSignOut() {
+    Alert.alert("Sign out", "Sign out of Aura?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: () => signOut() },
+    ]);
   }
 
   function handleOpenSettings() {
@@ -231,6 +240,16 @@ export function CameraScreen({ navigation }: Props) {
             <Text style={styles.flipButtonText}>
               {facing === "back" ? "Front cam" : "Back cam"}
             </Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.flipButton,
+              pressed && styles.flipButtonPressed,
+            ]}
+            onPress={handleSignOut}
+            disabled={isBusy}
+          >
+            <Text style={styles.flipButtonText}>Sign out</Text>
           </Pressable>
           <View style={styles.statusPill}>
             <Text style={styles.statusText}>
