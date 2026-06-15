@@ -1,10 +1,13 @@
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 
+import { AuthScreen } from "./src/screens/AuthScreen";
 import { CameraScreen } from "./src/screens/CameraScreen";
 import { AuraReportScreen } from "./src/screens/AuraReportScreen";
 import { HistoryScreen } from "./src/screens/HistoryScreen";
+import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { RootStackParamList } from "./src/navigation/types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -17,22 +20,55 @@ const navigationTheme = {
   },
 };
 
-export default function App() {
+function RootNavigator() {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={styles.loadingShell}>
+        <ActivityIndicator color="#C4B5FD" />
+      </View>
+    );
+  }
+
   return (
-    <NavigationContainer theme={navigationTheme}>
-      <StatusBar style="light" />
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-          contentStyle: {
-            backgroundColor: "#05070c",
-          },
-        }}
-      >
-        <Stack.Screen name="Camera" component={CameraScreen} />
-        <Stack.Screen name="History" component={HistoryScreen} />
-        <Stack.Screen name="AuraReport" component={AuraReportScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: {
+          backgroundColor: "#05070c",
+        },
+      }}
+    >
+      {session ? (
+        <>
+          <Stack.Screen name="Camera" component={CameraScreen} />
+          <Stack.Screen name="History" component={HistoryScreen} />
+          <Stack.Screen name="AuraReport" component={AuraReportScreen} />
+        </>
+      ) : (
+        <Stack.Screen name="Auth" component={AuthScreen} />
+      )}
+    </Stack.Navigator>
   );
 }
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <NavigationContainer theme={navigationTheme}>
+        <StatusBar style="light" />
+        <RootNavigator />
+      </NavigationContainer>
+    </AuthProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  loadingShell: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#05070c",
+  },
+});
