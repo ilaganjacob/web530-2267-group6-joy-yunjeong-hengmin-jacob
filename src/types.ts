@@ -20,3 +20,8 @@ export type SavedAuraReport = AuraReport & {
   created_at: string;
   is_favorite: boolean;
 };
+
+export type DailyAuraRecord = AuraReport & {
+  is_daily: true;
+  date: string;
+};

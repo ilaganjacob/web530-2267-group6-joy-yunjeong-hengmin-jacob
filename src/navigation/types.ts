@@ -2,7 +2,11 @@ import { AuraReport } from "../types";
 
 export type RootStackParamList = {
   Auth: undefined;
-  Camera: undefined;
+  Camera:
+    | {
+        dailyMode?: boolean;
+      }
+    | undefined;
   History: undefined;
   AuraReport:
     | {
@@ -10,4 +14,5 @@ export type RootStackParamList = {
         mode?: "scan" | "saved";
       }
     | undefined;
+  DailyAura: undefined;
 };

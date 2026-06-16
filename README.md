@@ -15,6 +15,8 @@ a verdict, and a recommendation.
 - **react-native-reanimated** + **react-native-svg** for the gauge, radar
   chart, and scanning animations
 - **expo-linear-gradient** for screen background treatments
+- **@react-native-async-storage/async-storage** for daily-aura history (local)
+- **expo-notifications** for optional daily scan reminders
 - **Supabase Edge Function** (Deno) as the backend, calling the OpenAI
   Chat Completions API (`gpt-4o-mini` with vision) to generate the aura report
 
@@ -23,11 +25,12 @@ a verdict, and a recommendation.
 ```
 App.tsx                          Navigation container & stack setup
 src/
-  types.ts                       Shared types: AuraReport, AuraTrait, ThreatLevel
-  navigation/types.ts            React Navigation param list (Camera, AuraReport)
+  types.ts                       Shared types: AuraReport, DailyAuraRecord, …
+  navigation/types.ts            React Navigation param list (Camera, AuraReport, DailyAura)
   screens/
     CameraScreen.tsx             Camera preview, capture, resize, kicks off analysis
     AuraReportScreen.tsx         Animated results screen (gauge, radar, verdict, etc.)
+    DailyAuraScreen.tsx          Daily check-in hub: streak, calendar, reminders
   components/
     ScanningOverlay.tsx          Animated "READING AURA" sweep overlay shown while busy
     AuraGauge.tsx                Circular animated "vibe score" gauge (SVG)
@@ -35,6 +38,7 @@ src/
     ThreatBadge.tsx              Color-coded threat-level pill (low/moderate/elevated/cosmic)
   services/
     analyzeAura.ts                Client for the analysis endpoint, with timeout + fallback
+    dailyAura.ts                  Daily scan storage, streak, one-scan/day gate, reminders
   data/
     sampleAuraReport.ts           Static sample report used as default AuraReport screen data
     fallbackAuraReports.ts        Pool of canned reports used when the API is unavailable
@@ -89,6 +93,30 @@ supabase/
      - **Verdict**: one-sentence absurd assessment.
      - **Recommendation**: one-sentence absurd action item.
 
+## Daily aura
+
+Separate from the main scan flow. One reading per calendar day, saved locally.
+
+**Flow:** Camera → **Daily** → `DailyAuraScreen` → **Scan today's aura** →
+`CameraScreen` (`dailyMode: true`) → back to `DailyAuraScreen`.
+
+1. **DailyAuraScreen** (`src/screens/DailyAuraScreen.tsx`)
+   - Streak counter (consecutive days with a daily scan).
+   - Today's preview, or a scan CTA if not scanned yet.
+   - Current-month calendar with aura-color dots on days that have a reading.
+   - Tap a day or today's preview to open **AuraReport**.
+   - Optional 9:00 AM reminder toggle (`expo-notifications`).
+
+2. **dailyAura service** (`src/services/dailyAura.ts`)
+   - Stores history in AsyncStorage (`aura:daily:history`).
+   - `hasScannedToday()` — blocks a second daily scan on the same calendar day.
+   - `saveDailyReport()` — saves `{ ...AuraReport, is_daily: true, date }`.
+   - `computeStreak()` — consecutive-day streak from saved history.
+   - `scheduleDailyReminder()` / `cancelDailyReminder()`.
+
+The main camera scan (Camera → AuraReport) is unchanged: unlimited and not
+persisted.
+
 ## Data model (`src/types.ts`)
 
 ```ts
@@ -104,6 +132,11 @@ type AuraReport = {
   traits: AuraTrait[];      // exactly 5 entries expected
   verdict: string;
   recommendation: string;
+};
+
+type DailyAuraRecord = AuraReport & {
+  is_daily: true;
+  date: string;             // local calendar date, e.g. "2026-06-10"
 };
 ```
 
@@ -164,5 +197,5 @@ supabase functions deploy analyze-aura
   staggered entrance animations, color-tinted background
 - ✅ Supabase Edge Function scaffold wired to OpenAI vision (`gpt-4o-mini`)
   with its own fallback reports
-- ⬜ No persistence/history of past scans yet (each scan is ephemeral)
+- ✅ Daily aura: local persistence, streak, calendar, one scan/day, optional reminders
 - ⬜ No user accounts/auth

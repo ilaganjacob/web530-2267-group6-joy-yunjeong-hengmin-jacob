@@ -32,6 +32,10 @@ import { ScanningOverlay } from "../components/ScanningOverlay";
 import { useAuth } from "../context/AuthContext";
 import { RootStackParamList } from "../navigation/types";
 import { analyzeAura, hasAuraAnalysisEndpoint } from "../services/analyzeAura";
+import {
+  hasScannedToday,
+  saveDailyReport,
+} from "../services/dailyAura";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Camera">;
 
@@ -106,7 +110,7 @@ function AnalyzeAuraButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-export function CameraScreen({ navigation }: Props) {
+export function CameraScreen({ navigation, route }: Props) {
   const { signOut } = useAuth();
   const cameraRef = useRef<CameraView | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
@@ -120,6 +124,7 @@ export function CameraScreen({ navigation }: Props) {
   const [facing, setFacing] = useState<CameraType>("back");
 
   const isBusy = isCapturing || isAnalyzing;
+  const dailyMode = route.params?.dailyMode === true;
   const canShowCamera = permission?.granted && !capturedUri;
   const permissionStatus = permission?.status;
   const analysisMode = hasAuraAnalysisEndpoint()
@@ -129,6 +134,18 @@ export function CameraScreen({ navigation }: Props) {
   async function handleCapture() {
     if (!cameraRef.current || isBusy) {
       return;
+    }
+
+    if (dailyMode) {
+      const alreadyScanned = await hasScannedToday();
+      if (alreadyScanned) {
+        Alert.alert(
+          "Daily limit reached",
+          "You already scanned your daily aura today. Come back tomorrow.",
+        );
+        navigation.navigate("DailyAura");
+        return;
+      }
     }
 
     setIsCapturing(true);
@@ -205,7 +222,12 @@ export function CameraScreen({ navigation }: Props) {
 
     try {
       const report = await analyzeAura(processedPhoto.base64);
-      navigation.navigate("AuraReport", { report });
+      if (dailyMode) {
+        await saveDailyReport(report);
+        navigation.navigate("DailyAura");
+      } else {
+        navigation.navigate("AuraReport", { report });
+      }
       setCapturedUri(null);
       setProcessedPhoto(null);
       setCameraReady(false);
@@ -326,10 +348,22 @@ export function CameraScreen({ navigation }: Props) {
     <SafeAreaView style={styles.screenShell}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.kicker}>DEADPAN CAMERA SCAN</Text>
-          <Text style={styles.title}>Point it at anything.</Text>
+          <Text style={styles.kicker}>
+            {dailyMode ? "DAILY AURA SCAN" : "DEADPAN CAMERA SCAN"}
+          </Text>
+          <Text style={styles.title}>
+            {dailyMode ? "Today's reading." : "Point it at anything."}
+          </Text>
         </View>
         <View style={styles.headerActions}>
+          {!dailyMode ? (
+            <Pressable
+              style={styles.dailyLink}
+              onPress={() => navigation.navigate("DailyAura")}
+            >
+              <Text style={styles.dailyLinkText}>Daily</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             style={({ pressed }) => [
               styles.flipButton,
@@ -453,7 +487,9 @@ export function CameraScreen({ navigation }: Props) {
                 </Text>
               </View>
             ) : (
-              <Text style={styles.scanButtonText}>Scan</Text>
+              <Text style={styles.scanButtonText}>
+                {dailyMode ? "Scan daily aura" : "Scan"}
+              </Text>
             )}
           </Pressable>
         )}
@@ -470,8 +506,9 @@ export function CameraScreen({ navigation }: Props) {
         </Pressable>
 
         <Text style={styles.caption}>
-          Capture freezes the frame and prepares a resized JPEG for the analysis
-          step.
+          {dailyMode
+            ? "One daily scan per calendar day. It saves locally with is_daily."
+            : "Capture freezes the frame and prepares a resized JPEG for the analysis step."}
         </Text>
       </View>
     </SafeAreaView>
@@ -509,6 +546,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexWrap: "wrap",
     gap: 8,
+  },
+  dailyLink: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(124, 58, 237, 0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(196, 181, 253, 0.35)",
+  },
+  dailyLinkText: {
+    color: "#DDD6FE",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
   },
   statusPill: {
     paddingHorizontal: 12,
