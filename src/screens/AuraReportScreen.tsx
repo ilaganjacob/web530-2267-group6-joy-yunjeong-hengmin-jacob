@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
   Alert,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -72,7 +73,7 @@ function hexToRgba(hexColor: string, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
-export function AuraReportScreen({ route }: Props) {
+export function AuraReportScreen({ route, navigation }: Props) {
   const { width } = useWindowDimensions();
   const report = route.params?.report ?? SAMPLE_AURA_REPORT;
   const mode = route.params?.mode ?? "scan";
@@ -120,6 +121,13 @@ export function AuraReportScreen({ route }: Props) {
     >
       <View style={[styles.topGlow, { backgroundColor: report.aura_color }]} />
       <View style={styles.bottomGlow} />
+
+      <Pressable
+        style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed]}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backButtonText}>Back</Text>
+      </Pressable>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -238,9 +246,30 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(123, 108, 246, 0.10)",
     opacity: 0.8,
   },
+  backButton: {
+    position: "absolute",
+    top: 52,
+    left: 20,
+    zIndex: 10,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+  backButtonPressed: {
+    opacity: 0.7,
+  },
+  backButtonText: {
+    color: "#F8FAFC",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 1.1,
+  },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 72,
+    paddingTop: 100,
     paddingBottom: 40,
     gap: 16,
   },
