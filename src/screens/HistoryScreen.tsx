@@ -196,6 +196,12 @@ export function HistoryScreen({ navigation }: Props) {
           <Text style={styles.kicker}>AURA ARCHIVE</Text>
           <Text style={styles.title}>Saved reports</Text>
         </View>
+        <Pressable
+          style={({ pressed }) => [styles.dailyButton, pressed && styles.dailyButtonPressed]}
+          onPress={() => navigation.navigate("DailyAura")}
+        >
+          <Text style={styles.dailyButtonText}>Daily</Text>
+        </Pressable>
       </View>
 
       <View style={[styles.toolbar, useStackedControls && styles.toolbarStacked]}>
@@ -344,6 +350,26 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: "#F8FAFC",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 1.1,
+  },
+  dailyButton: {
+    position: "absolute",
+    right: 8,
+    top: 15,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(124, 58, 237, 0.18)",
+    borderWidth: 1,
+    borderColor: "rgba(196, 181, 253, 0.35)",
+  },
+  dailyButtonPressed: {
+    opacity: 0.7,
+  },
+  dailyButtonText: {
+    color: "#DDD6FE",
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 1.1,
