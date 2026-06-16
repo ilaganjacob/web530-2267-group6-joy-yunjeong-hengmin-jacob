@@ -19,6 +19,7 @@ import {
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -344,18 +345,6 @@ export function CameraScreen({ navigation }: Props) {
               styles.flipButton,
               pressed && styles.flipButtonPressed,
             ]}
-            onPress={handleToggleFacing}
-            disabled={isBusy || !!capturedUri}
-          >
-            <Text style={styles.flipButtonText}>
-              {facing === "back" ? "Front cam" : "Back cam"}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.flipButton,
-              pressed && styles.flipButtonPressed,
-            ]}
             onPress={handleSignOut}
             disabled={isBusy}
           >
@@ -393,6 +382,24 @@ export function CameraScreen({ navigation }: Props) {
           <View style={styles.cornerBottomLeft} />
           <View style={styles.cornerBottomRight} />
         </View>
+
+        {!capturedUri ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.cameraFlipButton,
+              pressed && styles.cameraFlipButtonPressed,
+              isBusy && styles.cameraFlipButtonDisabled,
+            ]}
+            onPress={handleToggleFacing}
+            disabled={isBusy}
+            accessibilityRole="button"
+            accessibilityLabel={
+              facing === "back" ? "Switch to front camera" : "Switch to back camera"
+            }
+          >
+            <Ionicons name="camera-reverse-outline" size={22} color="#F8FAFC" />
+          </Pressable>
+        ) : null}
 
         <View style={styles.infoStrip}>
           <Text style={styles.infoText}>
@@ -592,6 +599,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 1.2,
+  },
+  cameraFlipButton: {
+    position: "absolute",
+    top: 22,
+    right: 22,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(7, 10, 18, 0.74)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    zIndex: 2,
+  },
+  cameraFlipButtonPressed: {
+    opacity: 0.7,
+  },
+  cameraFlipButtonDisabled: {
+    opacity: 0.45,
   },
   infoStrip: {
     position: "absolute",
