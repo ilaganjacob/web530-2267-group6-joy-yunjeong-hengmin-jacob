@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Audio } from "expo-av";
 import {
   ActivityIndicator,
   Alert,
@@ -153,6 +154,10 @@ export function CameraScreen({ navigation, route }: Props) {
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      Audio.Sound.createAsync(require("../../assets/scan-tone.wav"), { shouldPlay: true, volume: 0.7 })
+        .then(({ sound }) => sound.setOnPlaybackStatusUpdate((s) => { if ("didJustFinish" in s && s.didJustFinish) sound.unloadAsync(); }))
+        .catch(() => {});
 
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.85,
