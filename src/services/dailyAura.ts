@@ -97,6 +97,11 @@ export async function saveDailyReport(
   return record;
 }
 
+export async function deleteDailyReport(date: string): Promise<void> {
+  const history = await readHistory();
+  await writeHistory(history.filter((entry) => entry.date !== date));
+}
+
 export function computeStreak(history: DailyAuraRecord[]): number {
   const dates = new Set(history.map((entry) => entry.date));
   const today = getTodayKey();

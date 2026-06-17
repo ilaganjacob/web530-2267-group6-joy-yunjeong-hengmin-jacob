@@ -30,7 +30,8 @@ import { TraitRadar } from "../components/TraitRadar";
 import { SAMPLE_AURA_REPORT } from "../data/sampleAuraReport";
 import { RootStackParamList } from "../navigation/types";
 import { deleteReport, hasSaveEndpoint, saveAuraReport } from "../services/auraReports";
-import { SavedAuraReport } from "../types";
+import { deleteDailyReport } from "../services/dailyAura";
+import { DailyAuraRecord, SavedAuraReport } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AuraReport">;
 
@@ -83,7 +84,8 @@ export function AuraReportScreen({ route, navigation }: Props) {
   const auraTint = hexToRgba(report.aura_color, 0.32);
   const canSave = mode === "scan" && hasSaveEndpoint();
   const reportId = (report as SavedAuraReport).id;
-  const canDelete = mode === "saved" && typeof reportId === "string";
+  const reportDate = (report as DailyAuraRecord).date;
+  const canDelete = mode === "saved" && (typeof reportId === "string" || typeof reportDate === "string");
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -99,7 +101,6 @@ export function AuraReportScreen({ route, navigation }: Props) {
   );
 
   function handleDelete() {
-    if (!reportId) return;
     Alert.alert(
       "Delete report?",
       "This can't be undone.",
@@ -110,7 +111,10 @@ export function AuraReportScreen({ route, navigation }: Props) {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteReport(reportId);
+              await Promise.all([
+                reportId ? deleteReport(reportId) : Promise.resolve(),
+                reportDate ? deleteDailyReport(reportDate) : Promise.resolve(),
+              ]);
               navigation.goBack();
             } catch (error) {
               console.error("Delete failed:", error);
