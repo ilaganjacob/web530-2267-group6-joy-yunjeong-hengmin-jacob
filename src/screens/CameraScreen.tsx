@@ -494,17 +494,6 @@ export function CameraScreen({ navigation, route }: Props) {
           </Pressable>
         )}
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.historyButton,
-            pressed && styles.historyButtonPressed,
-          ]}
-          onPress={() => navigation.navigate("History")}
-          disabled={isBusy}
-        >
-          <Text style={styles.historyButtonText}>View history</Text>
-        </Pressable>
-
         <Text style={styles.caption}>
           {dailyMode
             ? "One daily scan per calendar day. It saves locally with is_daily."
@@ -790,25 +779,6 @@ const styles = StyleSheet.create({
   sparkleBottomRight: {
     bottom: 10,
     right: 16,
-  },
-  historyButton: {
-    height: 50,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-  },
-  historyButtonPressed: {
-    opacity: 0.78,
-    transform: [{ scale: 0.98 }],
-  },
-  historyButtonText: {
-    color: "#E9D5FF",
-    fontSize: 14,
-    fontWeight: "900",
-    letterSpacing: 1.2,
   },
   caption: {
     color: "#94A3B8",
