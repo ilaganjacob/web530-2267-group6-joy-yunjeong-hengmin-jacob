@@ -505,8 +505,8 @@ export function CameraScreen({ navigation, route }: Props) {
 
         <Text style={styles.caption}>
           {dailyMode
-            ? "One daily scan per calendar day. It saves locally with is_daily."
-            : "Capture freezes the frame and prepares a resized JPEG for the analysis step."}
+            ? "One aura pull per day — no rerolls. Streak it or touch grass tomorrow."
+            : "Snap it. We freeze the frame and read whatever aura it's giving."}
         </Text>
       </View>
     </SafeAreaView>
