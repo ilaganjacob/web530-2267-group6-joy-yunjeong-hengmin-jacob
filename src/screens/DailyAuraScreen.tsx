@@ -170,7 +170,7 @@ export function DailyAuraScreen({ navigation }: Props) {
   }
 
   function handleViewReport(report: DailyAuraRecord) {
-    navigation.navigate("AuraReport", { report });
+    navigation.navigate("AuraReport", { report, mode: "saved" });
   }
 
   if (loading) {
