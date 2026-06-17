@@ -37,6 +37,7 @@ import {
   hasScannedToday,
   saveDailyReport,
 } from "../services/dailyAura";
+import { hasSaveEndpoint, saveAuraReport } from "../services/auraReports";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Camera">;
 
@@ -230,6 +231,9 @@ export function CameraScreen({ navigation, route }: Props) {
       const report = await analyzeAura(processedPhoto.base64);
       if (dailyMode) {
         await saveDailyReport(report);
+        if (hasSaveEndpoint()) {
+          saveAuraReport(report).catch(() => {});
+        }
         navigation.navigate("DailyAura");
       } else {
         navigation.navigate("AuraReport", { report });
