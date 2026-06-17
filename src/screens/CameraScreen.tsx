@@ -344,18 +344,38 @@ export function CameraScreen({ navigation, route }: Props) {
     );
   }
 
+  const cameraStatusLabel = isCapturing
+    ? "Capturing"
+    : isAnalyzing
+      ? "Analyzing"
+      : capturedUri
+        ? "Frozen"
+        : "Live";
+
   return (
     <SafeAreaView style={styles.screenShell}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.kicker}>
-            {dailyMode ? "DAILY AURA SCAN" : "DEADPAN CAMERA SCAN"}
-          </Text>
-          <Text style={styles.title}>
-            {dailyMode ? "Today's reading." : "Point it at anything."}
-          </Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerCopy}>
+            <Text style={styles.kicker}>
+              {dailyMode ? "DAILY AURA SCAN" : "DEADPAN CAMERA SCAN"}
+            </Text>
+            <Text style={styles.title}>
+              {dailyMode ? "Today's reading." : "Point it at anything."}
+            </Text>
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.signOutLink,
+              pressed && styles.signOutLinkPressed,
+            ]}
+            onPress={handleSignOut}
+            disabled={isBusy}
+          >
+            <Text style={styles.signOutLinkText}>Sign out</Text>
+          </Pressable>
         </View>
-        <View style={styles.headerActions}>
+        <View style={styles.headerNav}>
           {!dailyMode ? (
             <Pressable
               style={styles.dailyLink}
@@ -366,35 +386,14 @@ export function CameraScreen({ navigation, route }: Props) {
           ) : null}
           <Pressable
             style={({ pressed }) => [
-              styles.flipButton,
-              pressed && styles.flipButtonPressed,
+              styles.navButton,
+              pressed && styles.navButtonPressed,
             ]}
             onPress={() => navigation.navigate("History")}
             disabled={isBusy}
           >
-            <Text style={styles.flipButtonText}>History</Text>
+            <Text style={styles.navButtonText}>History</Text>
           </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.flipButton,
-              pressed && styles.flipButtonPressed,
-            ]}
-            onPress={handleSignOut}
-            disabled={isBusy}
-          >
-            <Text style={styles.flipButtonText}>Sign out</Text>
-          </Pressable>
-          <View style={styles.statusPill}>
-            <Text style={styles.statusText}>
-              {isCapturing
-                ? "Capturing"
-                : isAnalyzing
-                  ? "Analyzing"
-                  : capturedUri
-                    ? "Frozen"
-                    : "Live"}
-            </Text>
-          </View>
         </View>
       </View>
 
@@ -415,6 +414,22 @@ export function CameraScreen({ navigation, route }: Props) {
           <View style={styles.cornerTopRight} />
           <View style={styles.cornerBottomLeft} />
           <View style={styles.cornerBottomRight} />
+        </View>
+
+        <View style={styles.previewStatusWrap} pointerEvents="none">
+          <View style={styles.previewStatus}>
+            <View
+              style={[
+                styles.previewStatusDot,
+                isCapturing || isAnalyzing
+                  ? styles.previewStatusDotBusy
+                  : capturedUri
+                    ? styles.previewStatusDotFrozen
+                    : styles.previewStatusDotLive,
+              ]}
+            />
+            <Text style={styles.previewStatusText}>{cameraStatusLabel}</Text>
+          </View>
         </View>
 
         {!capturedUri ? (
@@ -516,6 +531,33 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 14,
   },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  headerCopy: {
+    flex: 1,
+  },
+  headerNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  signOutLink: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  signOutLinkPressed: {
+    opacity: 0.6,
+  },
+  signOutLinkText: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   kicker: {
     color: "#94A3B8",
     fontSize: 11,
@@ -529,12 +571,6 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     fontWeight: "900",
     letterSpacing: -0.8,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
   },
   dailyLink: {
     paddingHorizontal: 12,
@@ -550,19 +586,41 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1,
   },
-  statusPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
+  previewStatusWrap: {
+    position: "absolute",
+    top: 22,
+    left: 0,
+    right: 0,
+    alignItems: "center",
   },
-  statusText: {
-    color: "#E9D5FF",
+  previewStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "rgba(5, 7, 12, 0.72)",
+  },
+  previewStatusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+  },
+  previewStatusDotLive: {
+    backgroundColor: "#4ADE80",
+  },
+  previewStatusDotBusy: {
+    backgroundColor: "#C4B5FD",
+  },
+  previewStatusDotFrozen: {
+    backgroundColor: "#94A3B8",
+  },
+  previewStatusText: {
+    color: "#E2E8F0",
     fontSize: 11,
     fontWeight: "800",
-    letterSpacing: 1.2,
+    letterSpacing: 1,
   },
   previewFrame: {
     flex: 1,
@@ -623,7 +681,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.84)",
     borderBottomRightRadius: 18,
   },
-  flipButton: {
+  navButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
@@ -631,10 +689,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.10)",
   },
-  flipButtonPressed: {
+  navButtonPressed: {
     opacity: 0.7,
   },
-  flipButtonText: {
+  navButtonText: {
     color: "#F8FAFC",
     fontSize: 12,
     fontWeight: "800",
