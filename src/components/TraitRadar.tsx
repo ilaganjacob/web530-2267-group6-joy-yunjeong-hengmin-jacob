@@ -94,8 +94,8 @@ export function TraitRadar({ traits, color, size = 260 }: TraitRadarProps) {
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
 
-          // Bottom labels (sin > 0.5) need extra radius to clear each other
-          const extraRadius = sin > 0.5 ? 14 : 0;
+          // Bottom labels (sin > 0.5) need a little extra radius to stop overlapping
+          const extraRadius = sin > 0.5 ? 6 : 0;
           const labelPoint = polarPoint(
             index,
             chart.labelRadius + extraRadius,
@@ -107,12 +107,10 @@ export function TraitRadar({ traits, color, size = 260 }: TraitRadarProps) {
           const textAnchor: "start" | "end" | "middle" =
             Math.abs(cos) < 0.2 ? "middle" : cos > 0 ? "start" : "end";
 
-          // Per-position fine-tuning:
-          // index 0 = top → nudge right so it doesn't sit dead-centre
-          // index 1,4 = upper-right/left → push further out horizontally
-          const xExtra = index === 0 ? 10 : (index === 1 || index === 4) ? cos * 10 : cos * 4;
+          // Small per-position nudges — top nudged right, sides nudged outward slightly
+          const xExtra = index === 0 ? 4 : cos * 3;
           const labelX = clamp(labelPoint.x + xExtra, 12, size - 12);
-          const labelY = labelPoint.y + (sin > 0 ? 4 : sin < -0.8 ? -4 : 0);
+          const labelY = labelPoint.y + (sin > 0 ? 3 : sin < -0.8 ? -3 : 0);
 
           return (
             <SvgText

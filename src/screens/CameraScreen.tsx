@@ -440,7 +440,7 @@ export function CameraScreen({ navigation, route }: Props) {
           </Pressable>
         ) : null}
 
-        {isCapturing || isAnalyzing ? <ScanningOverlay /> : null}
+        {isCapturing ? <ScanningOverlay /> : null}
       </View>
 
       <View style={styles.statusBar}>
