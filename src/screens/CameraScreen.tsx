@@ -155,7 +155,8 @@ export function CameraScreen({ navigation, route }: Props) {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      Audio.Sound.createAsync(require("../../assets/scan-tone.wav"), { shouldPlay: true, volume: 0.7 })
+      Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
+        .then(() => Audio.Sound.createAsync(require("../../assets/scan-tone.wav"), { shouldPlay: true, volume: 0.7 }))
         .then(({ sound }) => sound.setOnPlaybackStatusUpdate((s) => { if ("didJustFinish" in s && s.didJustFinish) sound.unloadAsync(); }))
         .catch(() => {});
 
