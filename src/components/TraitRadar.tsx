@@ -23,7 +23,7 @@ export function TraitRadar({ traits, color, size = 260 }: TraitRadarProps) {
       (longest, trait) => Math.max(longest, trait.label.length),
       0,
     );
-    const labelRadius = radius + (longestLabel > 8 ? 2 : 6);
+    const labelRadius = radius - 6;
 
     const pointsForLevel = (level: number) => {
       return traits
@@ -94,11 +94,9 @@ export function TraitRadar({ traits, color, size = 260 }: TraitRadarProps) {
           const cos = Math.cos(angle);
           const sin = Math.sin(angle);
 
-          // Bottom labels (sin > 0.5) need a little extra radius to stop overlapping
-          const extraRadius = sin > 0.5 ? 6 : 0;
           const labelPoint = polarPoint(
             index,
-            chart.labelRadius + extraRadius,
+            chart.labelRadius,
             traits.length,
             chart.center,
           );
