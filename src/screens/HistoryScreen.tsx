@@ -4,12 +4,12 @@ import {
   Alert,
   FlatList,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -45,7 +45,7 @@ export function HistoryScreen({ navigation }: Props) {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const isGrid = viewMode === "grid";
-  const horizontalPadding = width < 390 ? 22 : 26;
+  const horizontalPadding = 18;
   const gridGap = 12;
   const contentWidth = Math.min(width - horizontalPadding * 2, 430);
   const cardWidth = isGrid
@@ -189,19 +189,24 @@ export function HistoryScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.screenShell}>
       <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>Back</Text>
-        </Pressable>
-        <View style={styles.headerTitleBlock}>
-          <Text style={styles.kicker}>AURA ARCHIVE</Text>
-          <Text style={styles.title}>Saved reports</Text>
+        <View style={styles.headerTop}>
+          <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
+          <View style={styles.headerTitleBlock}>
+            <Text style={styles.kicker}>AURA ARCHIVE</Text>
+            <Text style={styles.title}>Saved reports</Text>
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.dailyButton,
+              pressed && styles.dailyButtonPressed,
+            ]}
+            onPress={() => navigation.navigate("DailyAura")}
+          >
+            <Text style={styles.dailyButtonText}>Daily</Text>
+          </Pressable>
         </View>
-        <Pressable
-          style={({ pressed }) => [styles.dailyButton, pressed && styles.dailyButtonPressed]}
-          onPress={() => navigation.navigate("DailyAura")}
-        >
-          <Text style={styles.dailyButtonText}>Daily</Text>
-        </Pressable>
       </View>
 
       <View style={[styles.toolbar, useStackedControls && styles.toolbarStacked]}>
@@ -330,19 +335,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#05070c",
     paddingHorizontal: 18,
     paddingTop: 12,
+    paddingBottom: 18,
   },
   header: {
-    minHeight: 70,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
+    gap: 12,
+    marginBottom: 14,
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
   },
   backButton: {
-    position: "absolute",
-    left: 8,
-    top: 15,
-    paddingHorizontal: 13,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
@@ -351,15 +358,12 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: "#F8FAFC",
     fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.1,
+    fontWeight: "800",
+    letterSpacing: 1.2,
   },
   dailyButton: {
-    position: "absolute",
-    right: 8,
-    top: 15,
-    paddingHorizontal: 13,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 999,
     backgroundColor: "rgba(124, 58, 237, 0.18)",
     borderWidth: 1,
@@ -375,8 +379,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1.1,
   },
   headerTitleBlock: {
+    flex: 1,
     alignItems: "center",
-    paddingHorizontal: 82,
   },
   kicker: {
     color: "#94A3B8",

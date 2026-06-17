@@ -5,11 +5,11 @@ import {
   Image,
   Linking,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
   CameraType,
@@ -140,8 +140,8 @@ export function CameraScreen({ navigation, route }: Props) {
       const alreadyScanned = await hasScannedToday();
       if (alreadyScanned) {
         Alert.alert(
-          "Daily limit reached",
-          "You already scanned your daily aura today. Come back tomorrow.",
+          "Drop already claimed",
+          "Today's pull is canon. Go touch grass, pull unlocks tomorrow.",
         );
         navigation.navigate("DailyAura");
         return;
@@ -344,18 +344,38 @@ export function CameraScreen({ navigation, route }: Props) {
     );
   }
 
+  const cameraStatusLabel = isCapturing
+    ? "Capturing"
+    : isAnalyzing
+      ? "Analyzing"
+      : capturedUri
+        ? "Frozen"
+        : "Live";
+
   return (
     <SafeAreaView style={styles.screenShell}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.kicker}>
-            {dailyMode ? "DAILY AURA SCAN" : "DEADPAN CAMERA SCAN"}
-          </Text>
-          <Text style={styles.title}>
-            {dailyMode ? "Today's reading." : "Point it at anything."}
-          </Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerCopy}>
+            <Text style={styles.kicker}>
+              {dailyMode ? "DAILY AURA SCAN" : "DEADPAN CAMERA SCAN"}
+            </Text>
+            <Text style={styles.title}>
+              {dailyMode ? "Today's reading." : "Point it at anything."}
+            </Text>
+          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.signOutLink,
+              pressed && styles.signOutLinkPressed,
+            ]}
+            onPress={handleSignOut}
+            disabled={isBusy}
+          >
+            <Text style={styles.signOutLinkText}>Sign out</Text>
+          </Pressable>
         </View>
-        <View style={styles.headerActions}>
+        <View style={styles.headerNav}>
           {!dailyMode ? (
             <Pressable
               style={styles.dailyLink}
@@ -366,35 +386,14 @@ export function CameraScreen({ navigation, route }: Props) {
           ) : null}
           <Pressable
             style={({ pressed }) => [
-              styles.flipButton,
-              pressed && styles.flipButtonPressed,
+              styles.navButton,
+              pressed && styles.navButtonPressed,
             ]}
             onPress={() => navigation.navigate("History")}
             disabled={isBusy}
           >
-            <Text style={styles.flipButtonText}>History</Text>
+            <Text style={styles.navButtonText}>History</Text>
           </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.flipButton,
-              pressed && styles.flipButtonPressed,
-            ]}
-            onPress={handleSignOut}
-            disabled={isBusy}
-          >
-            <Text style={styles.flipButtonText}>Sign out</Text>
-          </Pressable>
-          <View style={styles.statusPill}>
-            <Text style={styles.statusText}>
-              {isCapturing
-                ? "Capturing"
-                : isAnalyzing
-                  ? "Analyzing"
-                  : capturedUri
-                    ? "Frozen"
-                    : "Live"}
-            </Text>
-          </View>
         </View>
       </View>
 
@@ -435,24 +434,34 @@ export function CameraScreen({ navigation, route }: Props) {
           </Pressable>
         ) : null}
 
-        <View style={styles.infoStrip}>
-          <Text style={styles.infoText}>
-            {capturedUri
-              ? `Prepared ${processedPhoto ? "and resized" : "for resize"}`
+        {isCapturing ? <ScanningOverlay /> : null}
+      </View>
+
+      <View style={styles.statusBar}>
+        <View style={styles.statusBarPrimary}>
+          <View
+            style={[
+              styles.statusDot,
+              isCapturing || isAnalyzing
+                ? styles.statusDotBusy
+                : capturedUri
+                  ? styles.statusDotFrozen
+                  : styles.statusDotLive,
+            ]}
+          />
+          <Text style={styles.statusBarLabel}>{cameraStatusLabel}</Text>
+        </View>
+        <Text style={styles.statusBarDetail} numberOfLines={1}>
+          {isAnalyzing
+            ? analysisMode
+            : capturedUri
+              ? processedPhoto
+                ? `${processedPhoto.width} x ${processedPhoto.height}`
+                : "Preparing JPEG"
               : cameraReady
                 ? "Camera ready"
                 : "Warming up camera"}
-          </Text>
-          <Text style={styles.infoTextMuted}>
-            {isAnalyzing
-              ? analysisMode
-              : processedPhoto
-                ? `${processedPhoto.width} x ${processedPhoto.height}`
-                : "JPEG output pending"}
-          </Text>
-        </View>
-
-        {isCapturing ? <ScanningOverlay /> : null}
+        </Text>
       </View>
 
       <View style={styles.footer}>
@@ -494,21 +503,10 @@ export function CameraScreen({ navigation, route }: Props) {
           </Pressable>
         )}
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.historyButton,
-            pressed && styles.historyButtonPressed,
-          ]}
-          onPress={() => navigation.navigate("History")}
-          disabled={isBusy}
-        >
-          <Text style={styles.historyButtonText}>View history</Text>
-        </Pressable>
-
         <Text style={styles.caption}>
           {dailyMode
-            ? "One daily scan per calendar day. It saves locally with is_daily."
-            : "Capture freezes the frame and prepares a resized JPEG for the analysis step."}
+            ? "One aura pull per day — no rerolls. Streak it or touch grass tomorrow."
+            : "Snap it. We freeze the frame and read whatever aura it's giving."}
         </Text>
       </View>
     </SafeAreaView>
@@ -527,6 +525,33 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 14,
   },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  headerCopy: {
+    flex: 1,
+  },
+  headerNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  signOutLink: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  signOutLinkPressed: {
+    opacity: 0.6,
+  },
+  signOutLinkText: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   kicker: {
     color: "#94A3B8",
     fontSize: 11,
@@ -540,12 +565,6 @@ const styles = StyleSheet.create({
     lineHeight: 32,
     fontWeight: "900",
     letterSpacing: -0.8,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
   },
   dailyLink: {
     paddingHorizontal: 12,
@@ -561,19 +580,19 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1,
   },
-  statusPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  statusDot: {
+    width: 7,
+    height: 7,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
   },
-  statusText: {
-    color: "#E9D5FF",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.2,
+  statusDotLive: {
+    backgroundColor: "#4ADE80",
+  },
+  statusDotBusy: {
+    backgroundColor: "#C4B5FD",
+  },
+  statusDotFrozen: {
+    backgroundColor: "#94A3B8",
   },
   previewFrame: {
     flex: 1,
@@ -634,7 +653,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.84)",
     borderBottomRightRadius: 18,
   },
-  flipButton: {
+  navButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
@@ -642,10 +661,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.10)",
   },
-  flipButtonPressed: {
+  navButtonPressed: {
     opacity: 0.7,
   },
-  flipButtonText: {
+  navButtonText: {
     color: "#F8FAFC",
     fontSize: 12,
     fontWeight: "800",
@@ -671,34 +690,42 @@ const styles = StyleSheet.create({
   cameraFlipButtonDisabled: {
     opacity: 0.45,
   },
-  infoStrip: {
-    position: "absolute",
-    left: 18,
-    right: 18,
-    bottom: 18,
+  statusBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
+    marginTop: 10,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 18,
-    backgroundColor: "rgba(7, 10, 18, 0.74)",
+    paddingVertical: 10,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.10)",
+    flexShrink: 0,
   },
-  infoText: {
+  statusBarPrimary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 0,
+  },
+  statusBarLabel: {
     color: "#F8FAFC",
     fontSize: 12,
     fontWeight: "800",
   },
-  infoTextMuted: {
+  statusBarDetail: {
+    flex: 1,
     color: "#C7D2FE",
     fontSize: 12,
     fontWeight: "700",
+    textAlign: "right",
   },
   footer: {
-    paddingTop: 14,
+    paddingTop: 10,
     gap: 12,
+    flexShrink: 0,
   },
   scanButton: {
     height: 58,
@@ -790,25 +817,6 @@ const styles = StyleSheet.create({
   sparkleBottomRight: {
     bottom: 10,
     right: 16,
-  },
-  historyButton: {
-    height: 50,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10)",
-  },
-  historyButtonPressed: {
-    opacity: 0.78,
-    transform: [{ scale: 0.98 }],
-  },
-  historyButtonText: {
-    color: "#E9D5FF",
-    fontSize: 14,
-    fontWeight: "900",
-    letterSpacing: 1.2,
   },
   caption: {
     color: "#94A3B8",
