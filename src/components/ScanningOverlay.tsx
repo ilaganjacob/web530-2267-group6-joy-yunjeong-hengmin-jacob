@@ -8,11 +8,23 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+const MESSAGES = [
+  "Detecting unresolved childhood decisions...",
+  "Calibrating ego output...",
+  "Measuring unsolicited opinion radius...",
+  "Cross-referencing known red flags...",
+  "Consulting the astral spreadsheet...",
+  "Scanning for main character syndrome...",
+  "Quantifying ambient chaos levels...",
+  "Mapping emotional blast radius...",
+  "Checking for unread notifications energy...",
+  "Estimating WiFi password withholding score...",
+];
+
 export function ScanningOverlay() {
   const [containerHeight, setContainerHeight] = useState(0);
-  // lineY goes from 0 to containerHeight, ping-ponging forever
+  const [msgIndex, setMsgIndex] = useState(0);
   const lineY = useSharedValue(0);
-  // pulse drives the dot scale + line opacity
   const pulse = useSharedValue(1);
 
   useEffect(() => {
@@ -32,17 +44,22 @@ export function ScanningOverlay() {
         easing: Easing.inOut(Easing.sin),
       }),
       -1,
-      true, // ping-pong: sweeps down then back up
+      true,
     );
   }, [containerHeight, lineY]);
 
-  // The line moves vertically via translateY
+  useEffect(() => {
+    const id = setInterval(() => {
+      setMsgIndex((i) => (i + 1) % MESSAGES.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, []);
+
   const lineStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: lineY.value }],
     opacity: 0.5 + pulse.value * 0.5,
   }));
 
-  // The dot pulses scale to signal active scanning
   const dotStyle = useAnimatedStyle(() => ({
     opacity: pulse.value,
     transform: [{ scale: 0.7 + pulse.value * 0.6 }],
@@ -58,7 +75,7 @@ export function ScanningOverlay() {
       <View style={styles.center} pointerEvents="none">
         <Animated.View style={[styles.dot, dotStyle]} />
         <Text style={styles.title}>READING AURA</Text>
-        <Text style={styles.subtitle}>Calibrating frequency bands</Text>
+        <Text style={styles.subtitle}>{MESSAGES[msgIndex]}</Text>
       </View>
     </View>
   );
