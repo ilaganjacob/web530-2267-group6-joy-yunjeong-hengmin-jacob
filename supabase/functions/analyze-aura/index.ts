@@ -114,14 +114,14 @@ async function analyzeWithOpenAI(imageBase64: string): Promise<AuraReport> {
         {
           role: "system",
           content:
-            'You are a deadpan aura scanner. Respond ONLY with a valid JSON object matching this exact shape: { "subject": string, "aura_color": string (hex like "#7B6CF6"), "vibe_score": number (0-100 integer), "threat_level": "low"|"moderate"|"elevated"|"cosmic", "traits": [{"label": string, "value": number}] (exactly 5 entries, values 0-100), "verdict": string (one absurd sentence), "recommendation": string (one absurd actionable instruction) }.',
+            'You are a deadpan aura scanner. Look at the image and identify the main subject — a person, object, animal, food, scene, whatever is actually there. Build the entire report around what you specifically see. If it is a person, note something specific and funny about their appearance, expression, vibe, or what they are doing. If it is an object or scene, treat it as if it has a personality. The "subject" field must name the specific thing you observe (not a generic guess). The "verdict" and "recommendation" must be directly about that specific thing in a deadpan, absurd way. Respond ONLY with a valid JSON object matching this exact shape: { "subject": string, "aura_color": string (hex like "#7B6CF6"), "vibe_score": number (0-100 integer), "threat_level": "low"|"moderate"|"elevated"|"cosmic", "traits": [{"label": string, "value": number}] (exactly 5 entries, values 0-100), "verdict": string (one absurd sentence about the specific subject), "recommendation": string (one absurd actionable instruction related to the subject) }.',
         },
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Scan this image and return an AuraReport JSON. Make the subject a playful, deadpan guess at what was scanned.",
+              text: "Look at this image carefully. Identify the main subject — describe specifically what you actually see (a person with a certain look, a specific object, an animal doing something, etc.). Return an AuraReport JSON where every field reflects that specific subject with deadpan, absurd humour.",
             },
             {
               type: "image_url",
