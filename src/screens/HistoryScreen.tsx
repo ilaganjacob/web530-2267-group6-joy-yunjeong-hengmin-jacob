@@ -16,7 +16,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuraGauge } from "../components/AuraGauge";
 import { ThreatBadge } from "../components/ThreatBadge";
 import { RootStackParamList } from "../navigation/types";
-import { getReports, toggleFavorite } from "../services/auraReports";
+import { deleteReport, getReports, toggleFavorite } from "../services/auraReports";
 import { SavedAuraReport } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
@@ -111,6 +111,30 @@ export function HistoryScreen({ navigation }: Props) {
     }
   }
 
+  function handleDelete(item: SavedAuraReport) {
+    Alert.alert(
+      "Delete report?",
+      `Remove "${item.subject}"? This can't be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setReports((prev) => prev.filter((r) => r.id !== item.id));
+            try {
+              await deleteReport(item.id);
+            } catch (error) {
+              console.error("Delete failed:", error);
+              setReports((prev) => [...prev, item].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+              Alert.alert("Delete failed", "That report could not be removed. Try again.");
+            }
+          },
+        },
+      ],
+    );
+  }
+
   function renderReport({ item }: { item: SavedAuraReport }) {
     return (
       <Pressable
@@ -123,6 +147,8 @@ export function HistoryScreen({ navigation }: Props) {
         onPress={() =>
           navigation.navigate("AuraReport", { report: item, mode: "saved" })
         }
+        onLongPress={() => handleDelete(item)}
+        delayLongPress={500}
       >
         <View style={styles.cardTopRow}>
           <View style={styles.subjectBlock}>
