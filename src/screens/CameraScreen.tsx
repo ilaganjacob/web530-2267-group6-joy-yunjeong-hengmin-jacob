@@ -416,22 +416,6 @@ export function CameraScreen({ navigation, route }: Props) {
           <View style={styles.cornerBottomRight} />
         </View>
 
-        <View style={styles.previewStatusWrap} pointerEvents="none">
-          <View style={styles.previewStatus}>
-            <View
-              style={[
-                styles.previewStatusDot,
-                isCapturing || isAnalyzing
-                  ? styles.previewStatusDotBusy
-                  : capturedUri
-                    ? styles.previewStatusDotFrozen
-                    : styles.previewStatusDotLive,
-              ]}
-            />
-            <Text style={styles.previewStatusText}>{cameraStatusLabel}</Text>
-          </View>
-        </View>
-
         {!capturedUri ? (
           <Pressable
             style={({ pressed }) => [
@@ -450,24 +434,34 @@ export function CameraScreen({ navigation, route }: Props) {
           </Pressable>
         ) : null}
 
-        <View style={styles.infoStrip}>
-          <Text style={styles.infoText}>
-            {capturedUri
-              ? `Prepared ${processedPhoto ? "and resized" : "for resize"}`
+        {isCapturing ? <ScanningOverlay /> : null}
+      </View>
+
+      <View style={styles.statusBar}>
+        <View style={styles.statusBarPrimary}>
+          <View
+            style={[
+              styles.statusDot,
+              isCapturing || isAnalyzing
+                ? styles.statusDotBusy
+                : capturedUri
+                  ? styles.statusDotFrozen
+                  : styles.statusDotLive,
+            ]}
+          />
+          <Text style={styles.statusBarLabel}>{cameraStatusLabel}</Text>
+        </View>
+        <Text style={styles.statusBarDetail} numberOfLines={1}>
+          {isAnalyzing
+            ? analysisMode
+            : capturedUri
+              ? processedPhoto
+                ? `${processedPhoto.width} x ${processedPhoto.height}`
+                : "Preparing JPEG"
               : cameraReady
                 ? "Camera ready"
                 : "Warming up camera"}
-          </Text>
-          <Text style={styles.infoTextMuted}>
-            {isAnalyzing
-              ? analysisMode
-              : processedPhoto
-                ? `${processedPhoto.width} x ${processedPhoto.height}`
-                : "JPEG output pending"}
-          </Text>
-        </View>
-
-        {isCapturing ? <ScanningOverlay /> : null}
+        </Text>
       </View>
 
       <View style={styles.footer}>
@@ -586,41 +580,19 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1,
   },
-  previewStatusWrap: {
-    position: "absolute",
-    top: 22,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-  },
-  previewStatus: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "rgba(5, 7, 12, 0.72)",
-  },
-  previewStatusDot: {
+  statusDot: {
     width: 7,
     height: 7,
     borderRadius: 999,
   },
-  previewStatusDotLive: {
+  statusDotLive: {
     backgroundColor: "#4ADE80",
   },
-  previewStatusDotBusy: {
+  statusDotBusy: {
     backgroundColor: "#C4B5FD",
   },
-  previewStatusDotFrozen: {
+  statusDotFrozen: {
     backgroundColor: "#94A3B8",
-  },
-  previewStatusText: {
-    color: "#E2E8F0",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1,
   },
   previewFrame: {
     flex: 1,
@@ -718,34 +690,42 @@ const styles = StyleSheet.create({
   cameraFlipButtonDisabled: {
     opacity: 0.45,
   },
-  infoStrip: {
-    position: "absolute",
-    left: 18,
-    right: 18,
-    bottom: 18,
+  statusBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
+    marginTop: 10,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 18,
-    backgroundColor: "rgba(7, 10, 18, 0.74)",
+    paddingVertical: 10,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
+    borderColor: "rgba(255,255,255,0.10)",
+    flexShrink: 0,
   },
-  infoText: {
+  statusBarPrimary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 0,
+  },
+  statusBarLabel: {
     color: "#F8FAFC",
     fontSize: 12,
     fontWeight: "800",
   },
-  infoTextMuted: {
+  statusBarDetail: {
+    flex: 1,
     color: "#C7D2FE",
     fontSize: 12,
     fontWeight: "700",
+    textAlign: "right",
   },
   footer: {
-    paddingTop: 14,
+    paddingTop: 10,
     gap: 12,
+    flexShrink: 0,
   },
   scanButton: {
     height: 58,
