@@ -82,8 +82,8 @@ export function AuraReportScreen({ route, navigation }: Props) {
   const chartWidth = Math.max(220, Math.min(320, width - 48));
   const auraTint = hexToRgba(report.aura_color, 0.32);
   const canSave = mode === "scan" && hasSaveEndpoint();
-  const savedReport = "id" in report ? (report as SavedAuraReport) : null;
-  const canDelete = mode === "saved" && savedReport !== null;
+  const reportId = (report as SavedAuraReport).id;
+  const canDelete = mode === "saved" && typeof reportId === "string";
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -99,7 +99,7 @@ export function AuraReportScreen({ route, navigation }: Props) {
   );
 
   function handleDelete() {
-    if (!savedReport) return;
+    if (!reportId) return;
     Alert.alert(
       "Delete report?",
       "This can't be undone.",
@@ -110,7 +110,7 @@ export function AuraReportScreen({ route, navigation }: Props) {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteReport(savedReport.id);
+              await deleteReport(reportId);
               navigation.goBack();
             } catch (error) {
               console.error("Delete failed:", error);
