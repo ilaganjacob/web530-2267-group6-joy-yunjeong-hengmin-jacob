@@ -23,7 +23,7 @@ export function TraitRadar({ traits, color, size = 260 }: TraitRadarProps) {
       (longest, trait) => Math.max(longest, trait.label.length),
       0,
     );
-    const labelRadius = radius - 10;
+    const labelRadius = radius - 15;
 
     const pointsForLevel = (level: number) => {
       return traits
