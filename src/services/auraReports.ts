@@ -98,6 +98,22 @@ export async function saveAuraReport(
   return data;
 }
 
+export async function deleteReport(reportId: string): Promise<void> {
+  if (!isSupabaseConfigured || reportId.startsWith("fallback-")) {
+    fallbackReports = fallbackReports.filter((r) => r.id !== reportId);
+    return;
+  }
+
+  const { error } = await supabase
+    .from("aura_reports")
+    .delete()
+    .eq("id", reportId);
+
+  if (error) {
+    throw new Error(`Delete failed: ${error.message}`);
+  }
+}
+
 export async function toggleFavorite(
   reportId: string,
   nextValue: boolean,
