@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import * as Haptics from "expo-haptics";
+import { Audio } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   ActivityIndicator,
@@ -84,10 +85,13 @@ export function AuraReportScreen({ route, navigation }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Fire a success haptic the moment the report screen comes into focus
   useFocusEffect(
     useCallback(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
+        .then(() => Audio.Sound.createAsync(require("../../assets/sparkle-tone.wav"), { shouldPlay: true, volume: 0.8 }))
+        .then(({ sound }) => sound.setOnPlaybackStatusUpdate((s) => { if ("didJustFinish" in s && s.didJustFinish) sound.unloadAsync(); }))
+        .catch(() => {});
     }, []),
   );
 
