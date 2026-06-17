@@ -22,6 +22,7 @@ export type SavedAuraReport = AuraReport & {
 };
 
 export type DailyAuraRecord = AuraReport & {
+  id: string;
   is_daily: true;
   date: string;
 };

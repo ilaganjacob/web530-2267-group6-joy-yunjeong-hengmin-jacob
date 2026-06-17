@@ -2,8 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 
 import { AuraReport, DailyAuraRecord } from "../types";
+import { supabase } from "./supabaseClient";
 
-const HISTORY_KEY = "aura:daily:history";
 const REMINDER_KEY = "aura:daily:reminder-enabled";
 const REMINDER_ID = "aura-daily-reminder";
 
@@ -24,82 +24,77 @@ export function getTodayKey(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-function toDailyRecord(report: AuraReport, date: string): DailyAuraRecord {
+function rowToRecord(row: Record<string, unknown>): DailyAuraRecord {
   return {
-    ...report,
+    id: row.id as string,
+    subject: row.subject as string,
+    aura_color: row.aura_color as string,
+    vibe_score: row.vibe_score as number,
+    threat_level: row.threat_level as DailyAuraRecord["threat_level"],
+    traits: row.traits as DailyAuraRecord["traits"],
+    verdict: row.verdict as string,
+    recommendation: row.recommendation as string,
     is_daily: true,
-    date,
+    date: row.scan_date as string,
   };
-}
-
-async function readHistory(): Promise<DailyAuraRecord[]> {
-  try {
-    const raw = await AsyncStorage.getItem(HISTORY_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(
-      (entry): entry is DailyAuraRecord =>
-        typeof entry === "object" &&
-        entry !== null &&
-        (entry as DailyAuraRecord).is_daily === true &&
-        typeof (entry as DailyAuraRecord).date === "string" &&
-        typeof (entry as DailyAuraRecord).subject === "string",
-    );
-  } catch (error) {
-    console.warn("Failed to read daily aura history:", error);
-    return [];
-  }
-}
-
-async function writeHistory(history: DailyAuraRecord[]): Promise<void> {
-  const sorted = [...history].sort((a, b) => b.date.localeCompare(a.date));
-  await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(sorted));
-}
-
-export async function getDailyHistory(): Promise<DailyAuraRecord[]> {
-  return readHistory();
 }
 
 export async function hasScannedToday(): Promise<boolean> {
   const today = getTodayKey();
-  const history = await readHistory();
-  return history.some((entry) => entry.date === today);
+  const { data } = await supabase
+    .from("aura_reports")
+    .select("id")
+    .eq("is_daily", true)
+    .eq("scan_date", today)
+    .maybeSingle();
+  return data !== null;
+}
+
+export async function saveDailyReport(report: AuraReport): Promise<DailyAuraRecord> {
+  const today = getTodayKey();
+  const { subject, aura_color, vibe_score, threat_level, traits, verdict, recommendation } = report;
+  const { data, error } = await supabase
+    .from("aura_reports")
+    .insert({ subject, aura_color, vibe_score, threat_level, traits, verdict, recommendation, is_daily: true, scan_date: today })
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to save daily report: ${error.message}`);
+  return rowToRecord(data as Record<string, unknown>);
+}
+
+export async function getDailyHistory(): Promise<DailyAuraRecord[]> {
+  const { data, error } = await supabase
+    .from("aura_reports")
+    .select("*")
+    .eq("is_daily", true)
+    .order("scan_date", { ascending: false });
+
+  if (error) return [];
+  return (data ?? []).map((row) => rowToRecord(row as Record<string, unknown>));
 }
 
 export async function getTodaysDailyAura(): Promise<DailyAuraRecord | null> {
   const today = getTodayKey();
-  const history = await readHistory();
-  return history.find((entry) => entry.date === today) ?? null;
+  const { data } = await supabase
+    .from("aura_reports")
+    .select("*")
+    .eq("is_daily", true)
+    .eq("scan_date", today)
+    .maybeSingle();
+
+  return data ? rowToRecord(data as Record<string, unknown>) : null;
 }
 
-export async function getDailyAuraForDate(
-  date: string,
-): Promise<DailyAuraRecord | null> {
-  const history = await readHistory();
-  return history.find((entry) => entry.date === date) ?? null;
-}
+export async function getDailyAuraForDate(date: string): Promise<DailyAuraRecord | null> {
+  const { data } = await supabase
+    .from("aura_reports")
+    .select("*")
+    .eq("is_daily", true)
+    .eq("scan_date", date)
+    .maybeSingle();
 
-export async function saveDailyReport(
-  report: AuraReport,
-  date = getTodayKey(),
-): Promise<DailyAuraRecord> {
-  const record = toDailyRecord(report, date);
-  const history = await readHistory();
-  const withoutDate = history.filter((entry) => entry.date !== date);
-  await writeHistory([record, ...withoutDate]);
-  return record;
-}
-
-export async function deleteDailyReport(date: string): Promise<void> {
-  const history = await readHistory();
-  await writeHistory(history.filter((entry) => entry.date !== date));
+  return data ? rowToRecord(data as Record<string, unknown>) : null;
 }
 
 export function computeStreak(history: DailyAuraRecord[]): number {
@@ -123,11 +118,7 @@ export function computeStreak(history: DailyAuraRecord[]): number {
 
 export async function requestNotificationPermission(): Promise<boolean> {
   const settings = await Notifications.getPermissionsAsync();
-
-  if (settings.granted) {
-    return true;
-  }
-
+  if (settings.granted) return true;
   const requested = await Notifications.requestPermissionsAsync();
   return requested.granted;
 }
@@ -137,19 +128,11 @@ export async function isDailyReminderEnabled(): Promise<boolean> {
   return value === "true";
 }
 
-export async function scheduleDailyReminder(
-  hour = 9,
-  minute = 0,
-): Promise<boolean> {
+export async function scheduleDailyReminder(hour = 9, minute = 0): Promise<boolean> {
   const granted = await requestNotificationPermission();
-  if (!granted) {
-    return false;
-  }
+  if (!granted) return false;
 
-  await Notifications.cancelScheduledNotificationAsync(REMINDER_ID).catch(
-    () => undefined,
-  );
-
+  await Notifications.cancelScheduledNotificationAsync(REMINDER_ID).catch(() => undefined);
   await Notifications.scheduleNotificationAsync({
     identifier: REMINDER_ID,
     content: {
@@ -169,8 +152,6 @@ export async function scheduleDailyReminder(
 }
 
 export async function cancelDailyReminder(): Promise<void> {
-  await Notifications.cancelScheduledNotificationAsync(REMINDER_ID).catch(
-    () => undefined,
-  );
+  await Notifications.cancelScheduledNotificationAsync(REMINDER_ID).catch(() => undefined);
   await AsyncStorage.setItem(REMINDER_KEY, "false");
 }
