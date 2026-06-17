@@ -81,9 +81,11 @@ export async function saveAuraReport(
     );
   }
 
+  const { subject, aura_color, vibe_score, threat_level, traits, verdict, recommendation } = report;
+
   const { data, error } = await supabase
     .from("aura_reports")
-    .insert(report)
+    .insert({ subject, aura_color, vibe_score, threat_level, traits, verdict, recommendation })
     .select()
     .single();
 
