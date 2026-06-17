@@ -90,20 +90,30 @@ export function TraitRadar({ traits, color, size = 260 }: TraitRadarProps) {
         />
 
         {traits.map((trait, index) => {
+          const angle = -Math.PI / 2 + (index * 2 * Math.PI) / traits.length;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+
+          // Bottom labels (sin > 0.5) need extra radius to clear each other
+          const extraRadius = sin > 0.5 ? 14 : 0;
           const labelPoint = polarPoint(
             index,
-            chart.labelRadius,
+            chart.labelRadius + extraRadius,
             traits.length,
             chart.center,
           );
-          const labelAdjust = getLabelAdjustments(trait.label);
-          const labelX = clamp(labelPoint.x + labelAdjust.x, 12, size - 12);
-          const labelY = labelPoint.y + labelAdjust.y;
-          const textAnchor =
-            labelAdjust.anchor ??
-            (labelPoint.x >= chart.center ? "end" : "start");
 
-          // Convert polar coordinates back to x/y for each label around the ring.
+          // Right side → start (text flows away from center), left → end, top/bottom → middle
+          const textAnchor: "start" | "end" | "middle" =
+            Math.abs(cos) < 0.2 ? "middle" : cos > 0 ? "start" : "end";
+
+          // Per-position fine-tuning:
+          // index 0 = top → nudge right so it doesn't sit dead-centre
+          // index 1,4 = upper-right/left → push further out horizontally
+          const xExtra = index === 0 ? 10 : (index === 1 || index === 4) ? cos * 10 : cos * 4;
+          const labelX = clamp(labelPoint.x + xExtra, 12, size - 12);
+          const labelY = labelPoint.y + (sin > 0 ? 4 : sin < -0.8 ? -4 : 0);
+
           return (
             <SvgText
               key={trait.label}
@@ -113,9 +123,7 @@ export function TraitRadar({ traits, color, size = 260 }: TraitRadarProps) {
               fontSize="8"
               fontWeight="600"
               textAnchor={textAnchor}
-              alignmentBaseline={
-                labelPoint.y > chart.center ? "hanging" : "baseline"
-              }
+              alignmentBaseline={sin > 0 ? "hanging" : "baseline"}
             >
               {trait.label.toUpperCase()}
             </SvgText>
@@ -158,35 +166,6 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function getLabelAdjustments(label: string) {
-  const normalized = label.toLowerCase();
-
-  if (normalized === "confidence" || normalized === "precision") {
-    return { x: 4, y: -2, anchor: "middle" as const };
-  }
-
-  if (normalized === "chaos") {
-    return { x: 12, y: 8 };
-  }
-
-  if (normalized === "mystery") {
-    return { x: 8, y: 8 };
-  }
-
-  if (normalized === "suspicion") {
-    return { x: -16, y: 0 };
-  }
-
-  if (normalized === "charm") {
-    return { x: -10, y: 0 };
-  }
-
-  if (normalized === "patience") {
-    return { x: -2, y: 0 };
-  }
-
-  return { x: 0, y: 0 };
-}
 
 const styles = StyleSheet.create({
   container: {
