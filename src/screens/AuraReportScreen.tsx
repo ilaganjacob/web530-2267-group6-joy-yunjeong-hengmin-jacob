@@ -29,7 +29,8 @@ import { ThreatBadge } from "../components/ThreatBadge";
 import { TraitRadar } from "../components/TraitRadar";
 import { SAMPLE_AURA_REPORT } from "../data/sampleAuraReport";
 import { RootStackParamList } from "../navigation/types";
-import { hasSaveEndpoint, saveAuraReport } from "../services/auraReports";
+import { deleteReport, hasSaveEndpoint, saveAuraReport } from "../services/auraReports";
+import { SavedAuraReport } from "../types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AuraReport">;
 
@@ -81,6 +82,8 @@ export function AuraReportScreen({ route, navigation }: Props) {
   const chartWidth = Math.max(220, Math.min(320, width - 48));
   const auraTint = hexToRgba(report.aura_color, 0.32);
   const canSave = mode === "scan" && hasSaveEndpoint();
+  const savedReport = "id" in report ? (report as SavedAuraReport) : null;
+  const canDelete = mode === "saved" && savedReport !== null;
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -94,6 +97,30 @@ export function AuraReportScreen({ route, navigation }: Props) {
         .catch(() => {});
     }, []),
   );
+
+  function handleDelete() {
+    if (!savedReport) return;
+    Alert.alert(
+      "Delete report?",
+      "This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteReport(savedReport.id);
+              navigation.goBack();
+            } catch (error) {
+              console.error("Delete failed:", error);
+              Alert.alert("Delete failed", "Could not remove this report. Try again.");
+            }
+          },
+        },
+      ],
+    );
+  }
 
   async function handleSave() {
     if (saving || saved) {
@@ -220,6 +247,17 @@ export function AuraReportScreen({ route, navigation }: Props) {
                 </Text>
               )}
             </TouchableOpacity>
+          </FadeSlideIn>
+        ) : null}
+
+        {canDelete ? (
+          <FadeSlideIn delay={1100}>
+            <Pressable
+              style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
+              onPress={handleDelete}
+            >
+              <Text style={styles.deleteButtonText}>Delete report</Text>
+            </Pressable>
           </FadeSlideIn>
         ) : null}
       </ScrollView>
@@ -418,5 +456,23 @@ const styles = StyleSheet.create({
   },
   saveButtonTextSaved: {
     color: "#E9D5FF",
+  },
+  deleteButton: {
+    height: 50,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.30)",
+  },
+  deleteButtonPressed: {
+    opacity: 0.7,
+  },
+  deleteButtonText: {
+    color: "#FCA5A5",
+    fontSize: 14,
+    fontWeight: "800",
+    letterSpacing: 1.2,
   },
 });
