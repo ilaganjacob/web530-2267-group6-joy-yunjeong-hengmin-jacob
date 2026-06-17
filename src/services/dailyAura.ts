@@ -149,7 +149,7 @@ export async function scheduleDailyReminder(
     identifier: REMINDER_ID,
     content: {
       title: "Daily aura check-in",
-      body: "Your aura has not been scanned today. One reading. No rerolls.",
+      body: "No aura logged today. Pull before midnight.",
       sound: true,
     },
     trigger: {

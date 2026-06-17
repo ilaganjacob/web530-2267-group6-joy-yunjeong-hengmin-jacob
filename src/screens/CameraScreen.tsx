@@ -140,8 +140,8 @@ export function CameraScreen({ navigation, route }: Props) {
       const alreadyScanned = await hasScannedToday();
       if (alreadyScanned) {
         Alert.alert(
-          "Daily limit reached",
-          "You already scanned your daily aura today. Come back tomorrow.",
+          "Drop already claimed",
+          "Today's pull is canon. Go touch grass, pull unlocks tomorrow.",
         );
         navigation.navigate("DailyAura");
         return;

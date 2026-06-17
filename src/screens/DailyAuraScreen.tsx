@@ -177,7 +177,7 @@ export function DailyAuraScreen({ navigation }: Props) {
     return (
       <View style={styles.loadingShell}>
         <ActivityIndicator color="#C4B5FD" />
-        <Text style={styles.loadingText}>Loading daily auras</Text>
+        <Text style={styles.loadingText}>Loading the lore...</Text>
       </View>
     );
   }
@@ -191,30 +191,30 @@ export function DailyAuraScreen({ navigation }: Props) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerRow}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Text style={styles.backButtonText}>Back</Text>
-          </Pressable>
-          <View style={styles.kickerPill}>
-            <Text style={styles.kickerText}>DAILY AURA</Text>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed && styles.backButtonPressed,
+              ]}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.backButtonText}>Back</Text>
+            </Pressable>
+            <View style={styles.headerTitleBlock}>
+              <Text style={styles.kicker}>DAILY AURA</Text>
+              <Text style={styles.title}>One pull daily.</Text>
+            </View>
+            <View style={styles.headerBalance} />
           </View>
         </View>
-
-        <Text style={styles.title}>One scan. Every day.</Text>
-        <Text style={styles.subtitle}>
-          {scannedToday
-            ? "Today's reading is locked in."
-            : "Your daily aura is still waiting."}
-        </Text>
 
         <View style={styles.streakCard}>
           <Text style={styles.streakLabel}>CURRENT STREAK</Text>
           <Text style={styles.streakValue}>{streak}</Text>
           <Text style={styles.streakCaption}>
-            {streak === 1 ? "day in a row" : "days in a row"}
+            {streak === 1 ? "day on main" : "days on main"}
           </Text>
         </View>
 
@@ -224,6 +224,12 @@ export function DailyAuraScreen({ navigation }: Props) {
             <Text style={styles.sectionNote}>{formatDisplayDate(todayKey)}</Text>
           </View>
 
+          <Text style={styles.statusLine}>
+            {scannedToday
+              ? "You're locked in today."
+              : "Daily aura is up for grabs."}
+          </Text>
+
           {todayRecord ? (
             <Pressable
               style={styles.todayPreview}
@@ -231,7 +237,7 @@ export function DailyAuraScreen({ navigation }: Props) {
             >
               <View style={styles.todayPreviewTop}>
                 <ThreatBadge level={todayRecord.threat_level} />
-                <Text style={styles.todayPreviewLink}>View full report</Text>
+                <Text style={styles.todayPreviewLink}>More</Text>
               </View>
               <Text style={styles.todaySubject}>{todayRecord.subject}</Text>
               <View style={styles.todayRow}>
@@ -254,9 +260,6 @@ export function DailyAuraScreen({ navigation }: Props) {
             </Pressable>
           ) : (
             <View style={styles.emptyToday}>
-              <Text style={styles.emptyTodayText}>
-                No daily scan yet. You get one reading per calendar day.
-              </Text>
               <Pressable
                 style={({ pressed }) => [
                   styles.scanButton,
@@ -268,12 +271,6 @@ export function DailyAuraScreen({ navigation }: Props) {
               </Pressable>
             </View>
           )}
-
-          {scannedToday ? (
-            <Text style={styles.limitNote}>
-              Already scanned today. Come back tomorrow.
-            </Text>
-          ) : null}
         </View>
 
         <View style={styles.sectionCard}>
@@ -345,7 +342,7 @@ export function DailyAuraScreen({ navigation }: Props) {
             </Pressable>
           ) : selectedDate ? (
             <Text style={styles.selectedEmpty}>
-              No daily aura saved for this day.
+              Side quest skipped.
             </Text>
           ) : null}
         </View>
@@ -355,7 +352,7 @@ export function DailyAuraScreen({ navigation }: Props) {
             <View style={styles.reminderCopy}>
               <Text style={styles.sectionTitle}>DAILY REMINDER</Text>
               <Text style={styles.sectionNote}>
-                9:00 AM nudge if you have not scanned yet.
+                9 AM tap if you ghosted today.
               </Text>
             </View>
             <Switch
@@ -394,10 +391,14 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     gap: 16,
   },
-  headerRow: {
+  header: {
+    marginBottom: 4,
+  },
+  headerTop: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
+    gap: 12,
   },
   backButton: {
     paddingHorizontal: 12,
@@ -405,41 +406,39 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.10)",
+  },
+  backButtonPressed: {
+    opacity: 0.7,
   },
   backButtonText: {
-    color: "#E2E8F0",
+    color: "#F8FAFC",
     fontSize: 12,
     fontWeight: "800",
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
   },
-  kickerPill: {
-    borderRadius: 999,
+  headerTitleBlock: {
+    flex: 1,
+    alignItems: "center",
+  },
+  headerBalance: {
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    paddingVertical: 8,
+    minWidth: 48,
   },
-  kickerText: {
-    color: "#C7D2FE",
+  kicker: {
+    color: "#94A3B8",
     fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.5,
+    fontWeight: "800",
+    letterSpacing: 1.6,
+    marginBottom: 4,
   },
   title: {
     color: "#F8FAFC",
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: "900",
-    letterSpacing: -0.8,
-  },
-  subtitle: {
-    color: "#94A3B8",
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: "600",
-    marginTop: -6,
+    textAlign: "center",
   },
   streakCard: {
     backgroundColor: "rgba(124, 58, 237, 0.16)",
@@ -488,6 +487,12 @@ const styles = StyleSheet.create({
   sectionNote: {
     color: "rgba(255,255,255,0.52)",
     fontSize: 12,
+    fontWeight: "600",
+  },
+  statusLine: {
+    color: "#94A3B8",
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: "600",
   },
   todayPreview: {
@@ -541,12 +546,6 @@ const styles = StyleSheet.create({
   emptyToday: {
     gap: 14,
   },
-  emptyTodayText: {
-    color: "#CBD5E1",
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: "600",
-  },
   scanButton: {
     height: 52,
     borderRadius: 16,
@@ -563,12 +562,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
     letterSpacing: 1,
-  },
-  limitNote: {
-    color: "#94A3B8",
-    fontSize: 12,
-    fontWeight: "700",
-    textAlign: "center",
   },
   weekdayRow: {
     flexDirection: "row",
